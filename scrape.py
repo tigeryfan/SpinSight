@@ -5,10 +5,18 @@ Functions:
     fetch(): fetches the laundry room view data from Greenwald and returns it in a JSON format.
 """
 
+import argparse
 import httpx
 import tomllib
 import json
 import tabulate
+import pandas as pd
+from datetime import datetime, timezone
+from pathlib import Path
+
+parser = argparse.ArgumentParser(description="Scrape the Greenwald laundry API for laundry machine data.")
+parser.add_argument("--table", action="store_true", help="print the scraped data as a table")
+args = parser.parse_args()
 
 with open("config.toml", "rb") as f:
     config = tomllib.load(f)
@@ -20,15 +28,18 @@ cookie = config["greenwald"]["cookie"]
 response = httpx.get("https://gpay.gi-web.net/api/v2/room-view", headers={"User-Agent": ua, "Authorization": authkey, "Cookie": cookie})
 
 data = json.loads(response.text)
-machines = []
-for machine in data:
-    del machine["locationName"]
-    del machine["platformType"]
-    del machine["topOffAvailable"] 
-    del machine["multiTopOffAvailable"]
-    del machine["superCycleAvailable"]
-    del machine["topOffCost"]
-    del machine["minutesPerTopOff"]
-    machines.append(machine)
 
-print(tabulate.tabulate(machines, headers="keys", tablefmt="grid"))
+poll_time = datetime.now(timezone.utc)
+
+df = pd.DataFrame(data)
+df["pollTime"] = poll_time
+
+parquet_path = Path("laundry_data.parquet")
+if parquet_path.exists():
+    existing = pd.read_parquet(parquet_path)
+    df = pd.concat([existing, df], ignore_index=True)
+
+df.to_parquet(parquet_path, index=False)
+
+if args.table:
+    print(tabulate.tabulate(df, headers="keys", tablefmt="grid"))
