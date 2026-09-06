@@ -1,0 +1,57 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-2);
+  border: 0;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--ink-1);
+  background: var(--surface-2);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn:disabled {
+  cursor: progress;
+  color: var(--accent);
+}
+
+/* Click feedback: a quick one-shot spin on every press. */
+.icon {
+  display: block;
+}
+
+.btn:active .icon {
+  animation: click-spin 0.5s var(--ease);
+}
+
+/* Longer spin during a refresh. */
+.btn[data-spinning="true"] .icon {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes click-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

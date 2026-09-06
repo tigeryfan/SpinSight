@@ -1,0 +1,92 @@
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+}
+
+.tile {
+  background: transparent;
+  padding: var(--s-4) var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  position: relative;
+}
+
+.tile + .tile {
+  border-left: 1px solid var(--border);
+}
+
+.tile[data-kind="washer"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--washer);
+}
+
+.tile[data-kind="dryer"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--dryer);
+}
+
+.label {
+  font-family: var(--font-num);
+  font-size: var(--t-meta);
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.num {
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--ink-1);
+  letter-spacing: -0.02em;
+}
+
+.tile[data-kind="washer"] .num {
+  color: var(--washer);
+}
+
+.tile[data-kind="dryer"] .num {
+  color: var(--dryer);
+}
+
+.total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--ink-3);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .tile + .tile {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
