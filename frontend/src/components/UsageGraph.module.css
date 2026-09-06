@@ -1,0 +1,158 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--t-h1);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink-1);
+  line-height: 1.3;
+}
+
+.subtitle {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: var(--t-meta);
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+
+.controls {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-num);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+}
+
+.legendItem .swatch {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+}
+
+.chartWrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  height: 280px;
+  font-family: var(--font-num);
+}
+
+.grid line {
+  animation: fade-in 0.4s var(--ease) both;
+}
+
+.yLabels text,
+.xLabels text {
+  animation: fade-in 0.4s var(--ease) both;
+  animation-delay: 0.1s;
+}
+
+.xLabels text {
+  animation-delay: 0.2s;
+}
+
+.area {
+  animation: reveal-area 1s var(--ease) both;
+}
+
+.line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw-line 1s var(--ease) both;
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-area {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid line,
+  .yLabels text,
+  .xLabels text,
+  .area,
+  .line {
+    animation: none !important;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .controls {
+    justify-content: space-between;
+  }
+}

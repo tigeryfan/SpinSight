@@ -1,0 +1,68 @@
+/* SpinSight tokens
+ *
+ * Industrial laundry status console.
+ * Cool deep-ink ground, hairline grid, lit indicator language.
+ * Mono numerics, single warm-orange signal.
+ */
+
+:root {
+  /* surfaces */
+  --bg-0: #0E1318;
+  --surface: #131A21;
+  --surface-2: #1A222B;
+  --border: #2A323D;
+  --border-strong: #3A424D;
+
+  /* ink */
+  --ink-1: #E8EDF2;
+  --ink-2: #7E8A95;
+  --ink-3: #5A6470;
+
+  /* accent: UI selection, focus, washer identity */
+  --accent: #2DBFC9;
+  --accent-soft: rgba(45, 191, 201, 0.16);
+
+  /* series */
+  --washer: #2DBFC9;
+  --washer-soft: rgba(45, 191, 201, 0.20);
+  --dryer: #FF8C42;
+  --dryer-soft: rgba(255, 140, 66, 0.20);
+
+  /* status (reserved for state, never for series) */
+  --status-ok: #2DA44E;
+  --status-ok-soft: rgba(45, 164, 78, 0.22);
+  --status-warn: #D4A72C;
+  --status-warn-soft: rgba(212, 167, 44, 0.22);
+  --status-info: #2DBFC9;
+  --status-info-soft: rgba(45, 191, 201, 0.24);
+  --status-bad: #CF222E;
+  --status-bad-soft: rgba(207, 34, 46, 0.20);
+
+  /* type */
+  --font-ui: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+  /* type scale */
+  --t-display: 36px;
+  --t-h1: 22px;
+  --t-h2: 16px;
+  --t-body: 14px;
+  --t-meta: 11px;
+
+  /* spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* radii: zero. the surface is divided by hairlines, not corners. */
+  --r-0: 0;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+}
