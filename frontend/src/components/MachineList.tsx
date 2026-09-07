@@ -25,6 +25,7 @@ export function MachineList({ machines }: Props) {
         <section
           key={section.kind}
           className={styles.section}
+          data-kind={section.kind}
           aria-labelledby={`${section.kind}-heading`}
         >
           <header className={styles.sectionHead}>
@@ -88,8 +89,6 @@ function machineProgress(machine: Machine): number {
 
 function StatusLight({ status }: { status: Machine["status"] }) {
   return (
-    <span className={styles.light} data-status={status} aria-hidden="true">
-      <span className={styles.lightCore} />
-    </span>
+    <span className={styles.light} data-status={status} aria-hidden="true" />
   );
 }

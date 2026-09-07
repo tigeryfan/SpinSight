@@ -84,16 +84,18 @@
   pointer-events: none;
 }
 
-.row[data-status="running"] .fill {
-  background: var(--status-warn-soft);
-}
-
+.row[data-status="running"] .fill,
 .row[data-status="almost_done"] .fill {
-  background: var(--status-info-soft);
+  background: var(--washer-soft);
 }
 
 .row[data-status="out_of_order"] .fill {
   background: var(--status-bad-soft);
+}
+
+.section[data-kind="dryer"] .row[data-status="running"] .fill,
+.section[data-kind="dryer"] .row[data-status="almost_done"] .fill {
+  background: var(--dryer-soft);
 }
 
 .id {
@@ -131,18 +133,20 @@
   color: var(--status-ok);
 }
 
-.row[data-status="almost_done"] .eta {
-  color: var(--status-info);
+.section[data-kind="washer"] .row[data-status="running"] .eta,
+.section[data-kind="washer"] .row[data-status="almost_done"] .eta,
+.section[data-kind="washer"] .row[data-status="out_of_order"] .eta {
+  color: var(--washer);
 }
 
-.row[data-status="out_of_order"] .eta {
-  color: var(--status-bad);
+.section[data-kind="dryer"] .row[data-status="running"] .eta,
+.section[data-kind="dryer"] .row[data-status="almost_done"] .eta,
+.section[data-kind="dryer"] .row[data-status="out_of_order"] .eta {
+  color: var(--dryer);
 }
 
-/* lit indicator: a small filled circle with a 1px inner highlight,
-   suggesting a real LED rather than a decoration */
+/* lit indicator: a small filled circle, solid like a traffic light */
 .light {
-  position: relative;
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -151,31 +155,20 @@
   background: currentColor;
 }
 
-.light::before {
-  content: "";
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-}
-
 .light[data-status="available"] {
   color: var(--status-ok);
 }
 
-.light[data-status="running"] {
-  color: var(--status-warn);
+.section[data-kind="washer"] .light[data-status="running"],
+.section[data-kind="washer"] .light[data-status="almost_done"],
+.section[data-kind="washer"] .light[data-status="out_of_order"] {
+  color: var(--washer);
 }
 
-.light[data-status="almost_done"] {
-  color: var(--status-info);
-}
-
-.light[data-status="out_of_order"] {
-  color: var(--status-bad);
+.section[data-kind="dryer"] .light[data-status="running"],
+.section[data-kind="dryer"] .light[data-status="almost_done"],
+.section[data-kind="dryer"] .light[data-status="out_of_order"] {
+  color: var(--dryer);
 }
 
 @media (max-width: 720px) {
