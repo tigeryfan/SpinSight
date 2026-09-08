@@ -58,8 +58,8 @@ export default function App() {
 
         <section aria-label="Usage trend">
           <UsageGraph
-            week={dashboard.usage.week}
-            hourly={dashboard.usage.hourly}
+            weekdayDaily={dashboard.usage.weekdayDaily}
+            weekdayHalfHour={dashboard.usage.weekdayHalfHour}
             selected={selected}
             onSelect={setSelected}
           />

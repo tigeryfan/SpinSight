@@ -4,8 +4,8 @@ import { DaySelector, type WeekdayKey } from "./DaySelector";
 import styles from "./UsageGraph.module.css";
 
 interface Props {
-  week: UsagePoint[];
-  hourly: UsagePoint[];
+  weekdayDaily: UsagePoint[];
+  weekdayHalfHour: UsagePoint[][];
   selected: WeekdayKey;
   onSelect: (key: WeekdayKey) => void;
 }
@@ -19,102 +19,59 @@ interface Prepared {
   xLabels: string[];
   yMax: number;
   title: string;
-  granularity: "day" | "hour";
+  granularity: "30 min" | "day";
   weekdayAverage: boolean;
 }
 
+// Mon = 0 .. Sun = 6, matching Date.getDay() with Monday as week start.
+function dowIndex(key: Exclude<WeekdayKey, "7d">): number {
+  const map: Record<Exclude<WeekdayKey, "7d">, number> = {
+    mon: 0,
+    tue: 1,
+    wed: 2,
+    thu: 3,
+    fri: 4,
+    sat: 5,
+    sun: 6,
+  };
+  return map[key];
+}
+
 function prepare(
-  week: UsagePoint[],
-  hourly: UsagePoint[],
+  weekdayDaily: UsagePoint[],
+  weekdayHalfHour: UsagePoint[][],
   selected: WeekdayKey
 ): Prepared {
   if (selected === "7d") {
-    // Order Mon..Sun using the trailing week's dates.
-    const ordered = [...week].sort((a, b) => dowOrder(a.bucket) - dowOrder(b.bucket));
-    const ys = ordered.flatMap((p) => [p.washer, p.dryer]);
+    // weekdayDaily already arrives sorted Mon..Sun.
+    const ys = weekdayDaily.flatMap((p) => [p.washer, p.dryer]);
     const yMax = niceMax(Math.max(1, ...ys));
     return {
-      series: { washer: ordered.map((p) => p.washer), dryer: ordered.map((p) => p.dryer) },
-      xLabels: ordered.map((p) => weekdayLabel(p.bucket)),
+      series: {
+        washer: weekdayDaily.map((p) => p.washer),
+        dryer: weekdayDaily.map((p) => p.dryer),
+      },
+      xLabels: weekdayDaily.map((p) => weekdayLabel(p.bucket)),
       yMax,
       title: "Average machines used by weekday",
       granularity: "day",
       weekdayAverage: true,
     };
   }
-  // Per-weekday view: average the matching weekday across all hourly buckets.
-  // With one trailing week this collapses to the single day, but the data
-  // path supports averaging across additional weeks when present.
-  const targetDow = dowIndex(selected);
-  const matchingDays = collectWeekdays(hourly, targetDow);
-  const hourBuckets: number[][] = Array.from({ length: 24 }, () => []);
-  for (const day of matchingDays) {
-    for (let h = 0; h < 24; h++) {
-      hourBuckets[h].push(day.washer[h]);
-      hourBuckets[h].push(day.dryer[h]);
-    }
-  }
-  const washer = hourBuckets.map((bucket) => avg(bucket.filter((_, i) => i % 2 === 0)));
-  const dryer = hourBuckets.map((bucket) => avg(bucket.filter((_, i) => i % 2 === 1)));
-  const ys = [...washer, ...dryer];
+  const slots = weekdayHalfHour[dowIndex(selected)] ?? [];
+  const ys = slots.flatMap((p) => [p.washer, p.dryer]);
   const yMax = niceMax(Math.max(1, ...ys));
   return {
-    series: { washer, dryer },
-    xLabels: Array.from({ length: 24 }, (_, h) => hourLabel(h)),
+    series: {
+      washer: slots.map((p) => p.washer),
+      dryer: slots.map((p) => p.dryer),
+    },
+    xLabels: slots.map((p) => halfHourLabel(p.bucket)),
     yMax,
     title: `Average ${capitalize(selected)} usage`,
-    granularity: "hour",
+    granularity: "30 min",
     weekdayAverage: true,
   };
-}
-
-function collectWeekdays(
-  hourly: UsagePoint[],
-  targetDow: number
-): { washer: number[]; dryer: number[] }[] {
-  // Group hourly buckets by date, then keep days whose weekday matches.
-  const byDate = new Map<string, number[]>();
-  for (const p of hourly) {
-    const date = p.bucket.slice(0, 10);
-    if (!byDate.has(date)) byDate.set(date, new Array(24).fill(0));
-    const hour = parseInt(p.bucket.slice(11, 13), 10);
-    byDate.get(date)![hour] = p.washer;
-  }
-  const dryersByDate = new Map<string, number[]>();
-  for (const p of hourly) {
-    const date = p.bucket.slice(0, 10);
-    if (!dryersByDate.has(date)) dryersByDate.set(date, new Array(24).fill(0));
-    const hour = parseInt(p.bucket.slice(11, 13), 10);
-    dryersByDate.get(date)![hour] = p.dryer;
-  }
-  const out: { washer: number[]; dryer: number[] }[] = [];
-  for (const [date, washerHours] of byDate) {
-    const d = new Date(date + "T00:00:00");
-    if (d.getDay() === targetDow) {
-      out.push({ washer: washerHours, dryer: dryersByDate.get(date) ?? new Array(24).fill(0) });
-    }
-  }
-  return out;
-}
-
-function dowIndex(key: Exclude<WeekdayKey, "7d">): number {
-  // Matches Date.getDay() where 0=Sun, 1=Mon, ..., 6=Sat.
-  const map: Record<Exclude<WeekdayKey, "7d">, number> = {
-    sun: 0,
-    mon: 1,
-    tue: 2,
-    wed: 3,
-    thu: 4,
-    fri: 5,
-    sat: 6,
-  };
-  return map[key];
-}
-
-function dowOrder(iso: string): number {
-  // Sort key: Mon=0, Tue=1, ..., Sun=6.
-  const d = new Date(iso + "T00:00:00");
-  return (d.getDay() + 6) % 7;
 }
 
 function capitalize(s: string): string {
@@ -143,10 +100,18 @@ function weekdayLabel(iso: string): string {
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][(d.getDay() + 6) % 7] ?? "";
 }
 
-function hourLabel(h: number): string {
-  if (h === 0) return "12a";
-  if (h === 12) return "12p";
-  return h > 12 ? `${h - 12}p` : `${h}a`;
+function halfHourLabel(iso: string): string {
+  // bucket format: YYYY-MM-DDTHH:MM
+  const h = parseInt(iso.slice(11, 13), 10);
+  const m = iso.slice(14, 16);
+  const hhmm = `${h}:${m}`;
+  if (m === "00") {
+    if (h === 0) return "12a";
+    if (h === 12) return "12p";
+    return h > 12 ? `${h - 12}p` : `${h}a`;
+  }
+  // Only label :30 ticks when they'd be sparse — keeps the axis readable.
+  return hhmm;
 }
 
 function pathFor(values: number[], yMax: number, plotW: number, plotH: number, plotX: number, plotY: number): string {
@@ -170,9 +135,12 @@ function areaPath(values: number[], yMax: number, plotW: number, plotH: number, 
   return `${line} L${lastX.toFixed(2)},${baseY.toFixed(2)} L${plotX.toFixed(2)},${baseY.toFixed(2)} Z`;
 }
 
-export function UsageGraph({ week, hourly, selected, onSelect }: Props) {
+export function UsageGraph({ weekdayDaily, weekdayHalfHour, selected, onSelect }: Props) {
   const titleId = useId();
-  const prepared = useMemo(() => prepare(week, hourly, selected), [week, hourly, selected]);
+  const prepared = useMemo(
+    () => prepare(weekdayDaily, weekdayHalfHour, selected),
+    [weekdayDaily, weekdayHalfHour, selected]
+  );
   const { series, xLabels, yMax, title, granularity } = prepared;
 
   const plotX = PAD.left;
