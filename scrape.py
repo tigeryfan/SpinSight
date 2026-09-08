@@ -1,8 +1,5 @@
 """
-Fetches laundry room state from the Greenwald API and returns it as JSON.
-
-Persistence lives in store.py. This module is intentionally side-effect-free:
-no file I/O, no global state, no caching.
+Fetches laundry machine room data from the Greenwald API, and optionally outputs a table.
 """
 
 import argparse
@@ -17,7 +14,7 @@ API_URL = "https://gpay.gi-web.net/api/v2/room-view"
 
 
 def fetch_machines(config_path: str = "config.toml") -> list[dict]:
-    """Load credentials from config, hit the API, return the parsed JSON list."""
+    """Load credentials from config, queries the API, then returns the parsed JSON list."""
     with open(config_path, "rb") as f:
         config = tomllib.load(f)
 
