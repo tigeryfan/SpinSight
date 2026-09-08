@@ -1,0 +1,17 @@
+{
+  "name": "spinsight-worker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Scheduled Cloudflare Worker that scrapes the Greenwald laundry API into D1.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "d1:schema": "wrangler d1 execute spinsight --file=worker/schema.sql",
+    "d1:schema:remote": "wrangler d1 execute spinsight --remote --file=worker/schema.sql",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "packageManager": "bun@1.4.0"
+}
