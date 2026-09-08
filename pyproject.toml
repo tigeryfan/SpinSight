@@ -1,5 +1,5 @@
 [project]
-name = "spindsight"
+name = "spinsight"
 version = "0.1.0"
 description = "See the status of laundry machines in your dorm, and if everything's busy, see when the next one is likely to be free and how busy your dorm tends to be each day."
 requires-python = ">=3.11"
