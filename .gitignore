@@ -4,6 +4,13 @@
 # Project-specific
 config.toml
 
+# Agents
+.claude/
+.codex/
+
+# Skills
+.impeccable/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
