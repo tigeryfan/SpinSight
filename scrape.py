@@ -1,45 +1,67 @@
 """
-This python program scrapes the Greenwald laundry API for laundry machine data.
+Fetches laundry room state from the Greenwald API and returns it as JSON.
 
-Functions:
-    fetch(): fetches the laundry room view data from Greenwald and returns it in a JSON format.
+Persistence lives in store.py. This module is intentionally side-effect-free:
+no file I/O, no global state, no caching.
 """
 
 import argparse
-import httpx
-import tomllib
 import json
+import sys
+import tomllib
+
+import httpx
 import tabulate
-import pandas as pd
-from datetime import datetime, timezone
-from pathlib import Path
 
-parser = argparse.ArgumentParser(description="Scrape the Greenwald laundry API for laundry machine data.")
-parser.add_argument("--table", action="store_true", help="print the scraped data as a table")
-args = parser.parse_args()
+API_URL = "https://gpay.gi-web.net/api/v2/room-view"
 
-with open("config.toml", "rb") as f:
-    config = tomllib.load(f)
 
-ua = config["greenwald"]["ua"]
-authkey = config["greenwald"]["authkey"]
-cookie = config["greenwald"]["cookie"]
+def fetch_machines(config_path: str = "config.toml") -> list[dict]:
+    """Load credentials from config, hit the API, return the parsed JSON list."""
+    with open(config_path, "rb") as f:
+        config = tomllib.load(f)
 
-response = httpx.get("https://gpay.gi-web.net/api/v2/room-view", headers={"User-Agent": ua, "Authorization": authkey, "Cookie": cookie})
+    headers = {
+        "User-Agent": config["greenwald"]["ua"],
+        "Authorization": config["greenwald"]["authkey"],
+        "Cookie": config["greenwald"]["cookie"],
+    }
 
-data = json.loads(response.text)
+    response = httpx.get(API_URL, headers=headers)
+    response.raise_for_status()
+    return json.loads(response.text)
 
-poll_time = datetime.now(timezone.utc)
 
-df = pd.DataFrame(data)
-df["pollTime"] = poll_time
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Fetch the Greenwald laundry room view.")
+    parser.add_argument(
+        "--table",
+        action="store_true",
+        help="print the fetched data as a table (does not store anything)",
+    )
+    parser.add_argument(
+        "--store",
+        action="store_true",
+        help="record the fetch in laundry_data.duckdb",
+    )
+    args = parser.parse_args()
 
-parquet_path = Path("laundry_data.parquet")
-if parquet_path.exists():
-    existing = pd.read_parquet(parquet_path)
-    df = pd.concat([existing, df], ignore_index=True)
+    machines = fetch_machines()
 
-df.to_parquet(parquet_path, index=False)
+    if args.table:
+        print(tabulate.tabulate(machines, headers="keys", tablefmt="grid"))
 
-if args.table:
-    print(tabulate.tabulate(df, headers="keys", tablefmt="grid"))
+    if args.store:
+        from store import init_db, record_snapshot  # local import keeps --table fast
+        init_db()
+        poll_time = record_snapshot(machines)
+        print(f"recorded {len(machines)} machines at {poll_time.isoformat()}")
+
+    if not (args.table or args.store):
+        print(json.dumps(machines, indent=2))
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
