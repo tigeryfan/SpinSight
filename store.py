@@ -1,9 +1,5 @@
 """
-SQLite-backed persistence for laundry machine snapshots.
-
-One table, append-only, keyed by (poll_time, bluetooth_address). Each row is
-one machine's state at one poll. Reads return plain dicts so callers don't
-have to know the schema.
+Module to store laundry machine data in a SQLite database.
 """
 
 from __future__ import annotations
