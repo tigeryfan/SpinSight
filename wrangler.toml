@@ -1,0 +1,25 @@
+# Wrangler config for the SpinSight scheduled Worker.
+#
+# The Cloudflare Workers GitHub integration auto-detects this file at the repo
+# root and runs `wrangler deploy` on every push to the configured branch.
+
+name = "spinsight"
+main = "worker/src/index.ts"
+compatibility_date = "2026-09-08"
+
+# Schedule: every 30 minutes. See https://developers.cloudflare.com/workers/configuration/cron-triggers/
+[triggers]
+crons = ["*/30 * * * *"]
+
+# D1 binding for the snapshot store. Create the database once in the CF
+# dashboard (Workers & Pages → D1 → Create), then paste the database_id below.
+# The database_name must match the dashboard name exactly.
+[[d1_databases]]
+binding = "spinsight-db"
+database_name = "spinsight"
+database_id = "b601e0b5-5ef1-4e35-a658-abb0c7687d30"
+
+# Secrets (GREENWALD_UA, GREENWALD_AUTHKEY, GREENWALD_COOKIE) are NOT set
+# here. Add them in the Worker Settings → Variables and Secrets page in the
+# Cloudflare dashboard, or with `wrangler secret put <NAME>` from a machine
+# that has wrangler installed.
