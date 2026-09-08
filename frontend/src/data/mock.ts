@@ -1,4 +1,9 @@
-import type { Dorm, DormId, Machine, UsagePoint, UsageSeries } from "./types";
+import type {
+  Dorm,
+  DormId,
+  Machine,
+  UsageObservation,
+} from "./types";
 
 // Deterministic PRNG so the same dorm renders the same data on every load.
 // Swap this file for a fetch() call when the backend lands.
@@ -36,61 +41,6 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-function generateWeeklyUsage(dormId: DormId, totalMachines: number): UsageSeries {
-  const rand = mulberry32(seedFromId(dormId + ":usage"));
-
-  // Daily usage profile: lower weekday mornings, peak Sun/Mon evenings.
-  const weekdayProfile = [0.18, 0.22, 0.34, 0.48, 0.66, 0.82, 0.94];
-  // Hourly profile for the 1d view: lunchtime + evening peaks.
-  const hourlyProfile = [
-    0.04, 0.02, 0.02, 0.02, 0.04, 0.08, 0.14, 0.22,
-    0.34, 0.42, 0.48, 0.54, 0.58, 0.62, 0.66, 0.7,
-    0.74, 0.78, 0.72, 0.6, 0.46, 0.32, 0.2, 0.1,
-  ];
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Week view: 7 days ending today.
-  const week: UsagePoint[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const isoDay = (d.getDay() + 6) % 7; // Monday = 0
-    const base = weekdayProfile[isoDay];
-    const washer = round1(totalMachines * 0.6 * base * (0.85 + rand() * 0.3));
-    const dryer = round1(totalMachines * 0.6 * base * (0.85 + rand() * 0.3));
-    week.push({
-      bucket: d.toISOString().slice(0, 10),
-      washer,
-      dryer,
-    });
-  }
-
-  // Hourly view: last 7 days, 24 buckets per day.
-  const hourly: UsagePoint[] = [];
-  for (let day = 6; day >= 0; day--) {
-    for (let h = 0; h < 24; h++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - day);
-      d.setHours(h, 0, 0, 0);
-      const base = hourlyProfile[h];
-      // Slight weekday modulation so the hourly series varies across days.
-      const dow = (d.getDay() + 6) % 7;
-      const dowMod = weekdayProfile[dow];
-      const washer = round1(totalMachines * 0.5 * base * (0.6 + dowMod * 0.8) * (0.85 + rand() * 0.3));
-      const dryer = round1(totalMachines * 0.5 * base * (0.6 + dowMod * 0.8) * (0.85 + rand() * 0.3));
-      hourly.push({
-        bucket: d.toISOString().slice(0, 13) + ":00",
-        washer,
-        dryer,
-      });
-    }
-  }
-
-  return { dormId, week, hourly };
-}
-
 interface DormConfig {
   washers: number;
   dryers: number;
@@ -105,6 +55,51 @@ const DORM_CONFIG: Record<DormId, DormConfig> = {
   "north-hutch": { washers: 6,  dryers: 6 },
   "south-hutch": { washers: 6,  dryers: 6 },
 };
+
+// One trailing week of 5-minute observations per dorm. The averages module
+// buckets and averages these — never touch the raw counts again.
+function generateObservations(
+  dormId: DormId,
+  refreshKey: number
+): UsageObservation[] {
+  const rand = mulberry32(seedFromId(dormId + ":obs:" + refreshKey));
+  const total =
+    DORM_CONFIG[dormId].washers + DORM_CONFIG[dormId].dryers;
+
+  // Daily usage profile: lower weekday mornings, peak Sun/Mon evenings.
+  const weekdayProfile = [0.18, 0.22, 0.34, 0.48, 0.66, 0.82, 0.94];
+  // Hourly profile: lunchtime + evening peaks.
+  const hourlyProfile = [
+    0.04, 0.02, 0.02, 0.02, 0.04, 0.08, 0.14, 0.22,
+    0.34, 0.42, 0.48, 0.54, 0.58, 0.62, 0.66, 0.7,
+    0.74, 0.78, 0.72, 0.6, 0.46, 0.32, 0.2, 0.1,
+  ];
+
+  const end = new Date();
+  end.setSeconds(0, 0);
+  end.setMinutes(end.getMinutes() - (end.getMinutes() % 5));
+  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const observations: UsageObservation[] = [];
+  const stepMs = 5 * 60 * 1000;
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const d = new Date(t);
+    const hour = d.getHours();
+    const dow = (d.getDay() + 6) % 7; // Mon = 0
+    const base = hourlyProfile[hour];
+    const dowMod = weekdayProfile[dow];
+    const noise = 0.85 + rand() * 0.3;
+    // Per-5-min snapshot of "machines in use" for this dorm.
+    const usage = total * 0.25 * base * (0.6 + dowMod * 0.8) * noise;
+    observations.push({
+      timestamp: d.toISOString(),
+      dormId,
+      washer: round1(usage),
+      dryer: round1(usage * (0.9 + rand() * 0.2)),
+    });
+  }
+  return observations;
+}
 
 function generateMachines(dormId: DormId): Machine[] {
   const rand = mulberry32(seedFromId(dormId + ":machines"));
@@ -149,21 +144,23 @@ function generateMachines(dormId: DormId): Machine[] {
 
 // Cache by dorm + refresh key so a refresh regenerates the data, but normal
 // re-renders stay stable.
-const usageCache = new Map<string, UsageSeries>();
+const observationsCache = new Map<string, UsageObservation[]>();
 const machineCache = new Map<string, Machine[]>();
 
 function cacheKey(dormId: DormId, refreshKey: number): string {
   return `${dormId}#${refreshKey}`;
 }
 
-export function getUsage(dormId: DormId, refreshKey = 0): UsageSeries {
+export function getMockObservations(
+  dormId: DormId,
+  refreshKey = 0
+): UsageObservation[] {
   const key = cacheKey(dormId, refreshKey);
-  const cached = usageCache.get(key);
+  const cached = observationsCache.get(key);
   if (cached) return cached;
-  const total = (DORM_CONFIG[dormId].washers + DORM_CONFIG[dormId].dryers);
-  const series = generateWeeklyUsage(dormId, total);
-  usageCache.set(key, series);
-  return series;
+  const obs = generateObservations(dormId, refreshKey);
+  observationsCache.set(key, obs);
+  return obs;
 }
 
 export function getMachines(dormId: DormId, refreshKey = 0): Machine[] {
