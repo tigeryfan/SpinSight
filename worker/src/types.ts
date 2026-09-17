@@ -18,7 +18,6 @@ export interface GreenwaldMachine {
 export interface MachineSnapshot {
   bluetooth_address: string;
   poll_time: string; // ISO 8601 UTC
-  scraped_at: string | null; // ISO 8601 UTC, time Greenwald responded
   machine_name: string | null;
   location_name: string | null;
   status: string | null;
