@@ -33,6 +33,6 @@ export async function insertSnapshots(env: Env, rows: MachineSnapshot[]): Promis
         r.minutes_per_top_off,
       );
     }
-    await db.batch(statements.map((sql, idx) => db.prepare(sql).bind(...params.slice(idx * 13, (idx + 1) * 13))));
+    await db.batch(statements.map((sql, idx) => db.prepare(sql).bind(...params.slice(idx * 14, (idx + 1) * 14))));
   }
 }
