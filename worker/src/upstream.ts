@@ -3,11 +3,11 @@ import type { GreenwaldMachine } from './types';
 
 /** Fetch the Greenwald room-view endpoint and return parsed JSON */
 export async function fetchGreenwaldRoomView(env: Env): Promise<GreenwaldMachine[]> {
-  const url = 'https://greenwald.example.com/room-view'; // placeholder; actual URL to be inserted by dev
+  const url = 'https://gpay.gi-web.net/api/v2/room-view';
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${env.GREENWALD_AUTHKEY}`,
+      'Authorization': env.GREENWALD_AUTHKEY,
       'Cookie': env.GREENWALD_COOKIE,
       'User-Agent': env.GREENWALD_UA,
     },
