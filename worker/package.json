@@ -1,0 +1,9 @@
+{
+  "name": "spinsight-scraper",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "typescript": "^5.5.0"
+  }
+}
