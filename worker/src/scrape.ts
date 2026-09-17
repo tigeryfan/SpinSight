@@ -5,11 +5,10 @@ import type { GreenwaldMachine, MachineSnapshot } from './types';
 import { withRetry, RetryExhaustedError, RetryOpts } from './retry';
 
 /** Convert raw machine to snapshot */
-function toMachineSnapshot(raw: GreenwaldMachine, pollTime: string, scrapedAt: string): MachineSnapshot {
+function toMachineSnapshot(raw: GreenwaldMachine, pollTime: string): MachineSnapshot {
   return {
     bluetooth_address: raw.bluetoothAddress,
     poll_time: pollTime,
-    scraped_at: scrapedAt,
     machine_name: raw.machineName,
     location_name: raw.locationName,
     status: raw.status,
@@ -47,9 +46,8 @@ export async function runScrape(env: Env): Promise<void> {
   };
 
   let machines: GreenwaldMachine[];
-  let scrapedAt: string;
   try {
-    ({ machines, scrapedAt } = await withRetry(() => fetchGreenwaldRoomView(env), retryOpts));
+    machines = await withRetry(() => fetchGreenwaldRoomView(env), retryOpts);
   } catch (e) {
     if (e instanceof RetryExhaustedError) {
       console.error('Scrape failed after retries:', e.lastError);
@@ -59,7 +57,7 @@ export async function runScrape(env: Env): Promise<void> {
     return; // nothing to store
   }
 
-  const snapshots = machines.map((m) => toMachineSnapshot(m, pollTime, scrapedAt));
+  const snapshots = machines.map((m) => toMachineSnapshot(m, pollTime));
   await insertSnapshots(env, snapshots);
   console.info(`Scrape completed ${pollTime}: fetched ${machines.length}, inserted ${snapshots.length}`);
 }
