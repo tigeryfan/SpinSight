@@ -16,5 +16,6 @@ export async function fetchGreenwaldRoomView(env: Env): Promise<GreenwaldMachine
     throw Object.assign(new Error(`Greenwald fetch failed with ${response.status}`), { response });
   }
   const data = (await response.json()) as GreenwaldMachine[];
+  console.info(`[upstream] response: type=${Array.isArray(data) ? 'array' : typeof data} length=${Array.isArray(data) ? data.length : 'n/a'} sample=${JSON.stringify(data).slice(0, 200)}`);
   return Array.isArray(data) ? data : [];
 }
