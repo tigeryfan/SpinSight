@@ -1,0 +1,1 @@
+ALTER TABLE machine_snapshots ADD COLUMN scraped_at TEXT;
