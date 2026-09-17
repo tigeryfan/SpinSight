@@ -7,8 +7,12 @@ export default {
     // Let the Worker stay alive until scrape finishes
     ctx.waitUntil(runScrape(env));
   },
-  // Placeholder fetch handler – not used in this task but required by Wrangler
+  // Manual trigger: GETs scrape Greenwald and write to D1
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    return new Response('Not implemented', { status: 501 });
+    if (request.method !== 'GET') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+    await runScrape(env);
+    return Response.json({ ok: true });
   },
 };
