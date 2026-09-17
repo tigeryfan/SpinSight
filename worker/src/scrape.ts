@@ -7,19 +7,19 @@ import { withRetry, RetryExhaustedError, RetryOpts } from './retry';
 /** Convert raw machine to snapshot */
 function toMachineSnapshot(raw: GreenwaldMachine, pollTime: string): MachineSnapshot {
   return {
-    bluetooth_address: raw.bluetooth_address,
+    bluetooth_address: raw.bluetoothAddress,
     poll_time: pollTime,
-    machine_name: raw.machine_name ?? null,
-    location_name: raw.location_name ?? null,
-    status: raw.status ?? null,
-    platform_type: raw.platform_type ?? null,
-    machine_type: raw.machine_type ?? null,
-    estimated_completion_time: raw.estimated_completion_time ?? null,
-    top_off_available: raw.top_off_available ?? 0,
-    multi_top_off_available: raw.multi_top_off_available ?? 0,
-    super_cycle_available: raw.super_cycle_available ?? 0,
-    top_off_cost: raw.top_off_cost ?? null,
-    minutes_per_top_off: raw.minutes_per_top_off ?? null,
+    machine_name: raw.machineName,
+    location_name: raw.locationName,
+    status: raw.status,
+    platform_type: raw.platformType,
+    machine_type: raw.machineType,
+    estimated_completion_time: raw.estimatedCompletionTime,
+    top_off_available: raw.topOffAvailable ? 1 : 0,
+    multi_top_off_available: raw.multiTopOffAvailable ? 1 : 0,
+    super_cycle_available: raw.superCycleAvailable ? 1 : 0,
+    top_off_cost: raw.topOffCost,
+    minutes_per_top_off: raw.minutesPerTopOff,
   };
 }
 

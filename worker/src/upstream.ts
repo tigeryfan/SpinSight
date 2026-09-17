@@ -15,7 +15,6 @@ export async function fetchGreenwaldRoomView(env: Env): Promise<GreenwaldMachine
   if (!response.ok) {
     throw Object.assign(new Error(`Greenwald fetch failed with ${response.status}`), { response });
   }
-  const data = (await response.json()) as { machines: GreenwaldMachine[] };
-  // Assume the payload contains a top-level "machines" array; adjust as needed.
-  return data.machines ?? [];
+  const data = (await response.json()) as GreenwaldMachine[];
+  return Array.isArray(data) ? data : [];
 }
