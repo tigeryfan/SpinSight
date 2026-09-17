@@ -11,14 +11,15 @@ export async function insertSnapshots(env: Env, rows: MachineSnapshot[]): Promis
     const params: unknown[] = [];
     for (const r of chunk) {
       statements.push(`INSERT OR REPLACE INTO machine_snapshots (
-        bluetooth_address, poll_time, machine_name, location_name, status,
+        bluetooth_address, poll_time, scraped_at, machine_name, location_name, status,
         platform_type, machine_type, estimated_completion_time,
         top_off_available, multi_top_off_available, super_cycle_available,
         top_off_cost, minutes_per_top_off
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`);
       params.push(
         r.bluetooth_address,
         r.poll_time,
+        r.scraped_at,
         r.machine_name,
         r.location_name,
         r.status,
