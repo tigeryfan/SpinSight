@@ -1,0 +1,131 @@
+/* SpinSight — design tokens, base styles */
+
+:root {
+  /* Surface (locked) */
+  --ink: #0E1318;
+  --ink-2: #161C24;
+  --ink-3: #1F2730;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --text: #E6EBF2;
+  --text-dim: #8A95A5;
+  --text-faint: #5A6473;
+
+  /* Status / identity accents (locked) */
+  --washer: #2DBFC9;
+  --dryer: #FF8C42;
+  --available: #4A5663;
+  --done: #B8C2CC;
+
+  /* Type */
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing scale (4 / 8 / 16 / 24 / 40 / 64) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 16px;
+  --s-4: 24px;
+  --s-5: 40px;
+  --s-6: 64px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+body {
+  font-feature-settings: 'ss01' on, 'cv11' on;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--washer);
+  color: var(--ink);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' on, 'ss02' on;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' on;
+}
+
+.uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.hairline-top {
+  border-top: 1px solid var(--hairline);
+}
+
+.hairline-bottom {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.hairline-left {
+  border-left: 1px solid var(--hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
