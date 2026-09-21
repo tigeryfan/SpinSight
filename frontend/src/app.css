@@ -19,6 +19,8 @@
   --accent: #2563eb; --wash: #60a5fa; --dry: #fb923c; --running: #10b981; --warn: #d97706; --done: #9ca3af;
   --selected: #111827; --selected-ink: #fff;
   --popover-shadow: 0 8px 24px #00000020;
+  --radius-panel: 14px; --radius-control: 8px; --radius-machine: 8px;
+  --control-inset: 4px; --panel-padding: 16px;
   color: var(--ink); background: var(--bg); scrollbar-color: var(--line) var(--bg);
   transition-property: --bg, --panel, --ink, --muted, --line, --accent, --warn, --done, --selected, --selected-ink;
   transition-duration: 220ms;
@@ -50,7 +52,7 @@ button, a, input { touch-action: manipulation; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .controls { display: flex; gap: 8px; align-items: center; }
-.pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 13px; white-space: nowrap; }
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); color: var(--ink); font-size: 13px; white-space: nowrap; }
 .pill:hover:not(:disabled) { border-color: var(--muted); }
 .icon-pill { width: 38px; padding: 0; }
 .theme-button { width: 86px; }
@@ -62,7 +64,8 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .stat .value { font-size: 22px; font-weight: 600; margin-top: auto; white-space: nowrap; }
 .stat .sub { font-size: 13px; color: var(--muted); font-weight: 500; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: var(--panel-padding); margin-bottom: 16px; }
+.machines { border-radius: calc(var(--radius-machine) + var(--panel-padding) + 1px); }
 .machines-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .pill-tag { display: inline-block; font-size: 11px; font-weight: 400; background: var(--bg); padding: 2px 8px; border-radius: 6px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
@@ -73,8 +76,8 @@ footer { color: var(--muted); font-size: 11px; max-width: 75ch; padding-bottom: 
 .text-button:hover { color: var(--ink); }
 .chart-loading { min-height: 380px; display: grid; place-items: center; color: var(--muted); }
 .empty { padding: 24px 0; color: var(--muted); text-align: center; }
-.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid var(--warn); border-radius: 8px; background: var(--panel); }
-.skip-link { position: fixed; left: 16px; top: -80px; z-index: 50; padding: 12px 16px; color: var(--selected-ink); background: var(--selected); border-radius: 8px; }
+.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid var(--warn); border-radius: var(--radius-control); background: var(--panel); }
+.skip-link { position: fixed; left: 16px; top: -80px; z-index: 50; padding: 12px 16px; color: var(--selected-ink); background: var(--selected); border-radius: var(--radius-control); }
 .skip-link:focus { top: 12px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .refresh-icon { display: block; }
@@ -92,7 +95,7 @@ footer { color: var(--muted); font-size: 11px; max-width: 75ch; padding-bottom: 
   .stat { padding: 12px; }
   .stat .label { font-size: 10px; }
   .stat .value { font-size: 21px; }
-  .machines { padding: 12px; }
+  .machines { --panel-padding: 12px; }
   .machine-count { display: none; }
 }
 @media (pointer: coarse) { .pill { min-height: 44px; } .icon-pill { width: 44px; } }

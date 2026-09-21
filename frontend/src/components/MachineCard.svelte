@@ -30,13 +30,13 @@
 </div>
 
 <style>
-  .machine { --machine-color: var(--wash); position: relative; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; transition: border-color .15s ease; }
+  .machine { --machine-color: var(--wash); position: relative; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-machine); transition: border-color .15s ease; }
   .machine.dry { --machine-color: var(--dry); }
   .machine:hover, .machine:focus-within { border-color: var(--muted); z-index: 2; }
-  .progress-track { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; background: color-mix(in srgb, var(--machine-color) 5%, transparent); }
+  .progress-track { position: absolute; inset: 0; overflow: hidden; border-radius: max(0px, calc(var(--radius-machine) - 1px)); pointer-events: none; background: color-mix(in srgb, var(--machine-color) 5%, transparent); }
   .progress-fill { height: 100%; background: color-mix(in srgb, var(--machine-color) 28%, transparent); }
   .completed .progress-fill { opacity: .55; }
-  .machine-button { display: flex; align-items: center; width: 100%; position: relative; gap: 8px; border: 0; border-radius: inherit; padding: 15px 16px; background: transparent; color: var(--ink); text-align: left; }
+  .machine-button { display: flex; align-items: center; width: 100%; position: relative; gap: 8px; border: 0; border-radius: max(0px, calc(var(--radius-machine) - 1px)); padding: 15px 16px; background: transparent; color: var(--ink); text-align: left; }
   .pip { width: 10px; height: 10px; border-radius: 50%; background: var(--done); flex: none; }
   .running .pip { background: var(--running); }
   .completed .pip { background: var(--warn); }
@@ -44,7 +44,7 @@
   .dorm { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 1px; }
   .status { font-size: 12px; color: var(--muted); text-align: right; }
   .running .status { color: var(--ink); font-weight: 500; }
-  .machine-details { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease, visibility .15s; position: absolute; bottom: calc(100% - 1px); right: 0; padding: 10px 12px; min-width: 216px; border-radius: 8px; background: var(--ink); color: var(--panel); box-shadow: var(--popover-shadow); font-size: 12px; z-index: 5; }
+  .machine-details { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease, visibility .15s; position: absolute; bottom: calc(100% - 1px); right: 0; padding: 10px 12px; min-width: 216px; border-radius: var(--radius-control); background: var(--ink); color: var(--panel); box-shadow: var(--popover-shadow); font-size: 12px; z-index: 5; }
   .machine:not(.dismissed):hover .machine-details, .machine:not(.dismissed):focus-within .machine-details { visibility: visible; opacity: 1; transform: translateY(0); }
   .expanded .machine-details { visibility: visible; opacity: 1; transform: none; transition: none; position: relative; bottom: auto; padding: 0 16px 12px; background: transparent; color: var(--ink); box-shadow: none; min-width: 0; }
   dl { margin: 0; }

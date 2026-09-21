@@ -167,14 +167,14 @@
 </section>
 
 <style>
-  .chart-panel { padding: 20px 22px 14px; border-radius: 14px; }
+  .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
   .chart-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; margin-bottom: 20px; }
-  .range { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: 4px; border: 1px solid var(--line); border-radius: 8px; user-select: none; touch-action: pan-y; }
+  .range { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--control-inset); border: 1px solid var(--line); border-radius: var(--radius-control); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
-  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: 6px; color: var(--ink); font-size: 13px; cursor: grab; }
+  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); color: var(--ink); font-size: 13px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button[aria-selected='true'] { color: var(--selected-ink); }
-  .range-thumb { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 8); border-radius: 6px; background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
+  .range-thumb { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 8); border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
   .range-thumb.direct { transition: none; }
   .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
   .legend span { display: flex; align-items: center; gap: 7px; }
@@ -195,7 +195,7 @@
   .direct .hover-line, .direct .hover-dot, .chart-tooltip.direct { transition: none; }
   .chart-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: crosshair; }
   .chart-wrap:has(.chart-input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-  .chart-tooltip { position: absolute; top: 0; left: 0; width: 154px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--popover-shadow); font-size: 12px; pointer-events: none; opacity: 0; transition: transform .14s cubic-bezier(.16, 1, .3, 1), opacity .12s ease-out; }
+  .chart-tooltip { position: absolute; top: 0; left: 0; width: 154px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: var(--popover-shadow); font-size: 12px; pointer-events: none; opacity: 0; transition: transform .14s cubic-bezier(.16, 1, .3, 1), opacity .12s ease-out; }
   .chart-tooltip.visible { opacity: 1; }
   .chart-tooltip strong { display: block; margin-bottom: 6px; }
   .chart-tooltip span { display: flex; align-items: center; gap: 7px; color: var(--muted); padding: 2px 0; }
