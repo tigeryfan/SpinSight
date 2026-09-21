@@ -83,7 +83,8 @@
     thumbOffset = null;
     select(index);
     const button = event.currentTarget as HTMLButtonElement;
-    dragState = { pointerId: event.pointerId, startX: event.clientX, startLeft: button.offsetLeft - 4, buttonWidth: button.offsetWidth };
+    const first = tabs.querySelector('button')!;
+    dragState = { pointerId: event.pointerId, startX: event.clientX, startLeft: button.offsetLeft - first.offsetLeft, buttonWidth: button.getBoundingClientRect().width };
   }
   function drag(event: PointerEvent) {
     if (!dragState || event.pointerId !== dragState.pointerId) return;
@@ -95,7 +96,9 @@
       thumbAnimated = false;
     }
     if (!dragMoved) return;
-    thumbOffset = Math.max(0, Math.min(tabs.clientWidth - 8 - dragState.buttonWidth, dragState.startLeft + dx));
+    const buttons = tabs.querySelectorAll('button');
+    const maxOffset = buttons[buttons.length - 1].offsetLeft - buttons[0].offsetLeft;
+    thumbOffset = Math.max(0, Math.min(maxOffset, dragState.startLeft + dx));
     select(Math.round(thumbOffset / dragState.buttonWidth) - 1, false, false);
   }
   function endDrag(event: PointerEvent) {
@@ -169,12 +172,12 @@
 <style>
   .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
   .chart-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; margin-bottom: 20px; }
-  .range { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--control-inset); border: 1px solid var(--line); border-radius: var(--radius-control); user-select: none; touch-action: pan-y; }
+  .range { --range-inset: 6px; --range-radius: var(--radius-panel); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
-  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); color: var(--ink); font-size: 13px; cursor: grab; }
+  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 13px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button[aria-selected='true'] { color: var(--selected-ink); }
-  .range-thumb { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 8); border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
+  .range-thumb { position: absolute; left: var(--range-inset); top: var(--range-inset); bottom: var(--range-inset); width: calc((100% - 2 * var(--range-inset)) / 8); border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
   .range-thumb.direct { transition: none; }
   .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
   .legend span { display: flex; align-items: center; gap: 7px; }
