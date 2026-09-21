@@ -5,7 +5,6 @@
   let view = $state(-1);
   let width = $state(700);
   let active = $state<number | null>(null);
-  let showTable = $state(false);
   let dragState: { pointerId: number; startX: number; startLeft: number; buttonWidth: number } | null = null;
   let dragMoved = false;
   let thumbOffset = $state<number | null>(null);
@@ -126,7 +125,7 @@
   <div id="usage-panel" role="tabpanel" aria-labelledby={`period-${view + 1}`}>
     <div class="chart-caption"><span>{title}{#if view === -1} · {formatDate(dates[0])}–{formatDate(dates[6])}{/if}</span><span>{view === -1 ? 'Daily average in use' : 'Machines in use'}</span></div>
     <div class="chart-wrap" bind:clientWidth={width}>
-      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}: washers and dryers in use. Use the chart slider or view data for values.`}>
+      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}: washers and dryers in use. Use the chart slider to explore values.`}>
         <defs>
           <linearGradient id="wash-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--wash)" stop-opacity=".18" /><stop offset="1" stop-color="var(--wash)" stop-opacity="0" /></linearGradient>
           <linearGradient id="dry-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--dry)" stop-opacity=".14" /><stop offset="1" stop-color="var(--dry)" stop-opacity="0" /></linearGradient>
@@ -162,10 +161,6 @@
           <strong>{selected.label}</strong><span><i class="wash"></i>Washers <b>{selected.washers}</b></span><span><i class="dry"></i>Dryers <b>{selected.dryers}</b></span>
         </div>
     </div>
-    <div class="chart-footer"><span>Illustrative history</span><button class="text-button" aria-expanded={showTable} aria-controls="usage-data" onclick={() => showTable = !showTable}>{showTable ? 'Hide data' : 'View data'}</button></div>
-    {#if showTable}
-      <div id="usage-data" class="table-wrap"><table><caption>{title} · {view === -1 ? 'Daily average machines in use' : 'Machines in use'}</caption><thead><tr><th scope="col">{view === -1 ? 'Day' : 'Hour'}</th><th scope="col">Washers</th><th scope="col">Dryers</th></tr></thead><tbody>{#each points as point}<tr><th scope="row">{point.label}</th><td>{point.washers}</td><td>{point.dryers}</td></tr>{/each}</tbody></table></div>
-    {/if}
   </div>
 </section>
 
@@ -204,12 +199,6 @@
   .chart-tooltip span { display: flex; align-items: center; gap: 7px; color: var(--muted); padding: 2px 0; }
   .chart-tooltip i { width: 8px; height: 8px; border-radius: 50%; }
   .chart-tooltip b { margin-left: auto; color: var(--ink); }
-  .chart-footer { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; }
-  .table-wrap { margin-top: 12px; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: right; }
-  caption { text-align: left; padding-bottom: 8px; color: var(--muted); }
-  th, td { padding: 8px; border-bottom: 1px solid var(--line); }
-  th:first-child { text-align: left; }
   @media (max-width: 600px) {
     .chart-panel { padding: 16px 12px 10px; }
     .range { width: 100%; }

@@ -23,7 +23,7 @@
   let refreshSpinning = $state(false);
   let refreshIcon: HTMLSpanElement;
   let error = $state('');
-  let announcement = $state('Loading demo machines.');
+  let announcement = $state('Loading machines.');
   let filtered = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
@@ -36,7 +36,7 @@
     loading = true; error = '';
     try {
       snapshot = await loadSnapshot();
-      announcement = `Demo data refreshed at ${snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}.`;
+      announcement = `Data refreshed at ${snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}.`;
     } catch {
       error = 'Could not refresh the dashboard. Please try again.';
       announcement = '';
@@ -81,7 +81,7 @@
       <DormPicker bind:value={dorm} />
     </div>
   </header>
-  <div class="demo-note"><span>Demo data</span><span>{#if loading}{snapshot ? 'Refreshing…' : 'Loading…'}{:else if snapshot}Updated {snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}{/if}</span></div>
+  <div class="update-note"><span>{#if loading}{snapshot ? 'Refreshing…' : 'Loading…'}{:else if snapshot}Updated {snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}{/if}</span></div>
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" onclick={refresh}>Try again</button></div>{/if}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
@@ -98,7 +98,7 @@
     <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
   {/if}
   <section class="panel machines" id="machines" aria-labelledby="machines-title" aria-busy={loading} tabindex="-1">
-    <div class="machines-heading"><h2 id="machines-title">Machines <span class="pill-tag">{dorm}</span></h2><span class="machine-count">{filtered.length} machines</span></div>
+    <div class="machines-heading"><h2 id="machines-title">Machines</h2><span class="machine-count">{filtered.length} machines</span></div>
     {#if snapshot && filtered.length}
       <div class="grid">
         {#each filtered as machine (machine.id)}
@@ -108,5 +108,4 @@
       </div>
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
-  <footer>Available counts include completed cycles awaiting unload. All cycle times and usage history are illustrative.</footer>
 </main>

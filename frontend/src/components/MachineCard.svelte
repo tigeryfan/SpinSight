@@ -14,7 +14,7 @@
     onpointerenter={() => dismissed = false} onfocus={() => dismissed = false}
     onkeydown={(event) => { if (event.key === 'Escape') { expanded = false; dismissed = true; } }}>
     <span class="pip" aria-hidden="true"></span>
-    <span class="name">{machine.machineName}{#if showDorm}<span class="dorm">{machine.dorm}</span>{/if}</span>
+    <span class="name"><span>{machine.machineName}</span>{#if showDorm}<span class="dorm">{machine.dorm}</span>{/if}</span>
     <span class="status">{status}</span>
   </button>
   {#if machine.status === 'Running'}
@@ -40,8 +40,8 @@
   .pip { width: 10px; height: 10px; border-radius: 50%; background: var(--done); flex: none; }
   .running .pip { background: var(--running); }
   .completed .pip { background: var(--warn); }
-  .name { flex: 1; min-width: 0; font-weight: 600; font-size: 13px; }
-  .dorm { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 1px; }
+  .name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; flex: 1; min-width: 0; font-weight: 600; font-size: 13px; }
+  .dorm { padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 65%, transparent); color: var(--ink); font-size: 11px; font-weight: 400; white-space: nowrap; }
   .status { font-size: 12px; color: var(--muted); text-align: right; }
   .running .status { color: var(--ink); font-weight: 500; }
   .machine-details { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease, visibility .15s; position: absolute; bottom: calc(100% - 1px); right: 0; padding: 10px 12px; min-width: 216px; border-radius: var(--radius-control); background: var(--ink); color: var(--panel); box-shadow: var(--popover-shadow); font-size: 12px; z-index: 5; }
