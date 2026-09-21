@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Check dorm laundry availability and explore washer and dryer usage with SpinSight." />
+    <meta name="color-scheme" content="light dark" />
+    <title>SpinSight</title>
+    <script>
+      try {
+        const theme = localStorage.getItem('spinsight-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch { /* System theme works when storage is unavailable. */ }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
