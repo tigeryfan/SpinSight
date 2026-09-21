@@ -89,7 +89,7 @@
       <div class="stat"><div class="label">{item.label}</div><div class="value">{snapshot ? item.data.available : '—'} <span class="sub">/ {snapshot ? item.data.total : '—'}</span></div></div>
     {/each}
     {#each [{ label: 'Next washer', data: washers }, { label: 'Next dryer', data: dryers }] as item}
-      <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}<span class="sub">{item.data.total > 0 && item.data.available === item.data.total ? "All available" : "No machines"}</span>{/if}</div></div>
+      <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}{#if item.data.total > 0 && item.data.available === item.data.total}<span class="all-available">All available</span>{:else}<span class="sub">No machines</span>{/if}{/if}</div></div>
     {/each}
   </section>
   {#if snapshot}
