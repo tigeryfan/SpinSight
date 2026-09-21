@@ -45,9 +45,14 @@
 <svelte:window onpointerdown={(event) => { if (open && !root.contains(event.target as Node)) close(); }} />
 <div class="dorm-picker" bind:this={root} onfocusout={(event) => { if (!root.contains(event.relatedTarget as Node)) close(); }}>
   <button class="pill" bind:this={trigger} aria-label={`Dorm: ${value}`} aria-haspopup="menu" aria-expanded={open} aria-controls="dorm-menu"
-    onclick={() => open ? close() : show()}
+    onpointerdown={(event) => {
+      if (event.button !== 0 || !event.isPrimary) return;
+      event.preventDefault();
+      open ? close(true) : show();
+    }}
+    onclick={(event) => { if (event.detail === 0) open ? close(true) : show(); }}
     onkeydown={(event) => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); show(); } }}>
-    <span>{value}</span><Icon name="chevron" />
+    <span>{value}</span><span class="chevron" class:flipped={open}><Icon name="chevron" /></span>
   </button>
   {#if open}
     <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" inert={!open} transition:dropdown bind:this={menu} onkeydown={keydown}>
@@ -63,9 +68,12 @@
 
 <style>
   .dorm-picker { position: relative; }
+  .chevron { display: inline-flex; transition: transform 160ms cubic-bezier(.215, .61, .355, 1); }
+  .chevron.flipped { transform: rotate(180deg); }
   .dorm-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 190px; padding: var(--control-inset); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: var(--popover-shadow); }
   .dorm-menu button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 10px; border: 0; border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); background: transparent; color: var(--ink); text-align: left; }
   .dorm-menu button:hover { background: var(--bg); }
   .dorm-menu button[aria-checked='true'] { background: var(--selected); color: var(--selected-ink); }
   .dorm-menu svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }
 </style>
