@@ -1,5 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import { cubicOut } from 'svelte/easing';
+  import { fly } from 'svelte/transition';
   import { dorms } from '../lib/data';
   import Icon from './Icon.svelte';
   let { value = $bindable('All Dorms') }: { value?: string } = $props();
@@ -8,6 +10,14 @@
   let trigger: HTMLButtonElement;
   let menu = $state<HTMLDivElement>();
   const options = ['All Dorms', ...dorms];
+
+  function dropdown(node: Element) {
+    return fly(node, {
+      y: -6,
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 160,
+      easing: cubicOut,
+    });
+  }
 
   async function show() {
     open = true;
@@ -40,7 +50,7 @@
     <span class="dorm-dot" aria-hidden="true"></span><span>{value}</span><Icon name="chevron" />
   </button>
   {#if open}
-    <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" bind:this={menu} onkeydown={keydown}>
+    <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" inert={!open} transition:dropdown bind:this={menu} onkeydown={keydown}>
       {#each options as dorm}
         <button role="menuitemradio" aria-checked={value === dorm} tabindex="-1" onclick={() => { value = dorm; close(true); }}>
           {dorm}
