@@ -64,7 +64,10 @@
 <a class="skip-link" href="#machines">Skip to machines</a>
 <main class="wrap">
   <header>
-    <h1>SpinSight</h1>
+    <div class="brand">
+      <h1>SpinSight</h1>
+    <div class="update-note"><span>{#if loading}{snapshot ? 'Refreshing…' : 'Loading…'}{:else if snapshot}Updated {snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}{/if}</span></div>
+    </div>
     <div class="controls">
       <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
         onpointerdown={(event) => { if (event.button === 0) startRefreshSpin(); }}
@@ -81,7 +84,6 @@
       <DormPicker bind:value={dorm} />
     </div>
   </header>
-  <div class="update-note"><span>{#if loading}{snapshot ? 'Refreshing…' : 'Loading…'}{:else if snapshot}Updated {snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}{/if}</span></div>
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" onclick={refresh}>Try again</button></div>{/if}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>

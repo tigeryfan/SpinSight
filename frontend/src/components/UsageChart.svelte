@@ -23,7 +23,7 @@
   let chartWidth = $derived(Math.max(width, 240));
   const height = 260;
   const left = 32;
-  const top = 28;
+  const top = 16;
   const bottom = 226;
   let plotWidth = $derived(chartWidth - left - 16);
   const x = (i: number) => left + i / Math.max(1, points.length - 1) * plotWidth;
@@ -120,10 +120,10 @@
           onpointerdown={(event) => startDrag(event, index - 1)}>{label}</button>
       {/each}
     </div>
+      <div class="legend"><span><i class="wash"></i>Washers</span><span><i class="dry"></i>Dryers</span></div>
   </div>
   <div id="usage-panel" role="tabpanel" aria-labelledby={`period-${view + 1}`}>
     <div class="chart-wrap" bind:clientWidth={width}>
-      <div class="legend"><span><i class="wash"></i>Washers</span><span><i class="dry"></i>Dryers</span></div>
       <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}${view === -1 ? `, ${formatDate(dates[0])}–${formatDate(dates[6])}, daily average` : ''}: washers and dryers in use. Use the chart slider to explore values.`}>
         <defs>
           <linearGradient id="wash-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--wash)" stop-opacity=".18" /><stop offset="1" stop-color="var(--wash)" stop-opacity="0" /></linearGradient>
@@ -165,15 +165,15 @@
 
 <style>
   .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
-  .chart-header { margin-bottom: 12px; }
-  .range { --range-inset: 6px; --range-radius: var(--radius-panel); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
+  .chart-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 12px; }
+  .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 6px; --range-radius: var(--radius-panel); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
-  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 13px; cursor: grab; }
+  .range button { z-index: 1; padding: 7px 8px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 13px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button[aria-selected='true'] { color: var(--selected-ink); }
   .range-thumb { position: absolute; left: var(--range-inset); top: var(--range-inset); bottom: var(--range-inset); width: calc((100% - 2 * var(--range-inset)) / 8); border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
   .range-thumb.direct { transition: none; }
-  .legend { position: absolute; top: 0; right: 16px; display: flex; gap: 16px; font-size: 12px; color: var(--muted); pointer-events: none; }
+  .legend { margin-left: auto; flex: none; display: flex; gap: 16px; font-size: 12px; color: var(--muted); pointer-events: none; }
   .legend span { display: flex; align-items: center; gap: 7px; }
   i { display: inline-block; width: 18px; height: 3px; border-radius: 3px; flex: none; }
   i.wash { background: var(--wash); } i.dry { background: var(--dry); }

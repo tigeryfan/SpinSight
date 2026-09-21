@@ -58,7 +58,8 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .theme-button { width: 86px; }
 .theme-content { display: grid; width: 100%; }
 .theme-option { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; }
-.update-note { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 12px; font-size: 11px; color: var(--muted); }
+.brand { display: grid; gap: 4px; }
+.update-note { font-size: 11px; color: var(--muted); }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .stat { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 12px 16px; }
 .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
