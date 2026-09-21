@@ -9,7 +9,7 @@
 
 <div class="machine" class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running'} class:completed={machine.status === 'Completed'} class:expanded class:dismissed>
   <div class="progress-track" aria-hidden="true"><div class="progress-fill" style:width={`${percentage}%`}></div></div>
-  <button class="machine-button" aria-expanded={expanded} aria-controls={`details-${machine.id}`} aria-label={`${machine.dorm}, ${machine.machineType} ${machine.machineName}, ${status}. Show details`}
+  <button class="machine-button" aria-expanded={expanded} aria-controls={`details-${machine.id}`} aria-label={`${machine.dorm}, ${machine.machineType} ${machine.machineName}, ${status}. ${expanded ? 'Hide' : 'Show'} details`}
     onclick={() => { expanded = !expanded; dismissed = !expanded; }}
     onpointerenter={() => dismissed = false} onfocus={() => dismissed = false}
     onkeydown={(event) => { if (event.key === 'Escape') { expanded = false; dismissed = true; } }}>

@@ -6,13 +6,13 @@
   let open = $state(false);
   let root: HTMLDivElement;
   let trigger: HTMLButtonElement;
-  let menu: HTMLDivElement;
+  let menu = $state<HTMLDivElement>();
   const options = ['All Dorms', ...dorms];
 
   async function show() {
     open = true;
     await tick();
-    menu.querySelectorAll('button')[options.indexOf(value)]?.focus();
+    menu?.querySelectorAll('button')[options.indexOf(value)]?.focus();
   }
   function close(restoreFocus = false) {
     open = false;
@@ -20,7 +20,7 @@
   }
   function keydown(event: KeyboardEvent) {
     if (event.key === 'Escape') { event.preventDefault(); close(true); }
-    if (!open || !(event.target instanceof HTMLButtonElement)) return;
+    if (!open || !menu || !(event.target instanceof HTMLButtonElement)) return;
     const buttons = [...menu.querySelectorAll('button')];
     const index = buttons.indexOf(event.target);
     let next: number | undefined;
@@ -40,7 +40,7 @@
     <span class="dorm-dot" aria-hidden="true"></span><span>{value}</span><Icon name="chevron" />
   </button>
   {#if open}
-    <div id="dorm-menu" class="dorm-menu" role="menu" aria-label="Dorm" bind:this={menu} onkeydown={keydown}>
+    <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" bind:this={menu} onkeydown={keydown}>
       {#each options as dorm}
         <button role="menuitemradio" aria-checked={value === dorm} tabindex="-1" onclick={() => { value = dorm; close(true); }}>
           {dorm}

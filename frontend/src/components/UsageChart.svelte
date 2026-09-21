@@ -6,6 +6,7 @@
   let active = $state<number | null>(null);
   let showTable = $state(false);
   let dragging = $state(false);
+  let dragMoved = false;
   let tabs: HTMLDivElement;
   const dates = lastFullWeek();
   const formatDate = (date: Date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -45,18 +46,22 @@
     if (!dragging) return;
     const buttons = [...tabs.querySelectorAll('button')];
     const index = buttons.findIndex(button => { const rect = button.getBoundingClientRect(); return event.clientX >= rect.left && event.clientX <= rect.right; });
-    if (index !== -1 && index - 1 !== view) select(index - 1);
+    if (index !== -1 && index - 1 !== view) {
+      dragMoved = true;
+      select(index - 1);
+    }
   }
 </script>
 
 <svelte:window onpointerup={() => dragging = false} onpointercancel={() => dragging = false} />
 <section class="panel chart-panel" aria-label="Laundry usage history">
   <div class="chart-header">
-    <div class="range" role="tablist" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}>
+    <div class="range" role="tablist" tabindex="-1" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}>
       <span class="range-thumb" style:transform={`translateX(${(view + 1) * 100}%)`} aria-hidden="true"></span>
       {#each ['Week', ...days] as label, index}
         <button id={`period-${index}`} role="tab" aria-selected={view === index - 1} aria-controls="usage-panel" tabindex={view === index - 1 ? 0 : -1}
-          onclick={() => select(index - 1)} onpointerdown={(event) => { if (event.button === 0) { dragging = true; select(index - 1); } }}>{label}</button>
+          onclick={() => { if (!dragMoved) select(index - 1); dragMoved = false; }}
+          onpointerdown={(event) => { if (event.button === 0) { dragging = true; dragMoved = false; select(index - 1); } }}>{label}</button>
       {/each}
     </div>
     <div class="legend"><span><i class="wash"></i>Washers</span><span><i class="dry"></i>Dryers</span></div>

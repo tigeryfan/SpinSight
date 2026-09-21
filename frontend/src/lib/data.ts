@@ -62,7 +62,7 @@ export function summary(machines: Machine[], type: MachineType) {
     total: typed.length,
     // Retain the mockup's non-running count; the UI explains awaiting-unload cycles.
     available: typed.length - active.length,
-    next: [...active].sort((a, b) => a.minutesLeft - b.minutesLeft)[0],
+    next: [...active].sort((a, b) => a.minutesLeft - b.minutesLeft).at(0),
   };
 }
 
