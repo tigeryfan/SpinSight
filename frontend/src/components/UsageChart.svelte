@@ -145,8 +145,8 @@
           <line class="hover-line hover-line-x" x1="0" x2="0" y1={top} y2={bottom} style:transform={`translateX(${hoverX}px)`} />
           <line class="hover-line hover-line-y-w" x1={left} x2={chartWidth - 16} y1="0" y2="0" style:transform={`translateY(${mergeGuides ? midY : washerY}px)`} />
           <line class="hover-line hover-line-y-d" class:merged={mergeGuides} x1={left} x2={chartWidth - 16} y1="0" y2="0" style:transform={`translateY(${mergeGuides ? midY : dryerY}px)`} />
-          <circle class="hover-dot" cx="0" cy="0" style:transform={`translate(${hoverX}px, ${mergeGuides ? midY : washerY}px)`} r="4" fill={mergeGuides ? 'var(--muted)' : 'var(--wash)'} stroke="var(--panel)" stroke-width="2" />
-          <circle class="hover-dot" class:merged={mergeGuides} cx="0" cy="0" style:transform={`translate(${hoverX}px, ${mergeGuides ? midY : dryerY}px)`} r="4" fill="var(--dry)" stroke="var(--panel)" stroke-width="2" />
+          <circle class="hover-dot" cx="0" cy="0" style:transform={`translate(${hoverX}px, ${washerY}px)`} r="4" fill="var(--wash)" stroke="var(--panel)" stroke-width="2" />
+          <circle class="hover-dot" cx="0" cy="0" style:transform={`translate(${hoverX}px, ${dryerY}px)`} r="4" fill="var(--dry)" stroke="var(--panel)" stroke-width="2" />
         </g>
       </svg>
       <input class="chart-input" type="range" min="0" max={points.length - 1} step="1" value={active ?? 0} aria-label="Explore chart values"
@@ -191,7 +191,7 @@
   .hover-line, .hover-dot { opacity: 0; pointer-events: none; vector-effect: non-scaling-stroke; transition: transform .14s cubic-bezier(.16, 1, .3, 1), opacity .12s ease-out; }
   .visible .hover-line { opacity: .7; }
   .visible .hover-dot { opacity: 1; }
-  .visible .hover-line.merged, .visible .hover-dot.merged { opacity: 0; }
+  .visible .hover-line.merged { opacity: 0; }
   .direct .hover-line, .direct .hover-dot, .chart-tooltip.direct { transition: none; }
   .chart-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: crosshair; }
   .chart-wrap:has(.chart-input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
