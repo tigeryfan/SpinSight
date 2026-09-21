@@ -88,7 +88,7 @@
     {#each [{ label: 'Washers available', data: washers }, { label: 'Dryers available', data: dryers }] as item}
       <div class="stat"><div class="label">{item.label}</div><div class="value">{snapshot ? item.data.available : '—'} <span class="sub">/ {snapshot ? item.data.total : '—'}</span></div></div>
     {/each}
-    {#each [{ label: 'Next washer to free up', data: washers }, { label: 'Next dryer to free up', data: dryers }] as item}
+    {#each [{ label: 'Next washer', data: washers }, { label: 'Next dryer', data: dryers }] as item}
       <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}<span class="sub">No active cycles</span>{/if}</div></div>
     {/each}
   </section>
