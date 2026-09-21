@@ -170,7 +170,8 @@
   .chart-panel { padding: 20px 22px 14px; border-radius: 14px; }
   .chart-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; margin-bottom: 20px; }
   .range { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: 4px; border: 1px solid var(--line); border-radius: 8px; user-select: none; touch-action: pan-y; }
-  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: 6px; color: var(--ink); font-size: 13px; cursor: grab; transition: color .2s ease; }
+  /* Colors inherit the animated root palette; another transition here lags behind it. */
+  .range button { z-index: 1; padding: 7px 12px; border: 0; background: transparent; border-radius: 6px; color: var(--ink); font-size: 13px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button[aria-selected='true'] { color: var(--selected-ink); }
   .range-thumb { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 8); border-radius: 6px; background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
