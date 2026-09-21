@@ -19,7 +19,7 @@
   --accent: #2563eb; --wash: #60a5fa; --dry: #fb923c; --running: #10b981; --warn: #d97706; --done: #9ca3af;
   --selected: #111827; --selected-ink: #fff;
   --popover-shadow: 0 8px 24px #00000020;
-  --radius-panel: 14px; --radius-control: 8px; --radius-machine: 8px;
+  --radius-panel: 16px; --radius-control: 12px; --radius-machine: 8px;
   --control-inset: 4px; --panel-padding: 16px;
   color: var(--ink); background: var(--bg); scrollbar-color: var(--line) var(--bg);
   transition-property: --bg, --panel, --ink, --muted, --line, --accent, --warn, --done, --selected, --selected-ink;
@@ -60,12 +60,11 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .theme-option { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; }
 .demo-note { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 11px; color: var(--muted); }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.stat { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; }
+.stat { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 12px 16px; }
 .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .stat .value { font-size: 22px; font-weight: 600; margin-top: auto; white-space: nowrap; }
 .stat .sub { font-size: 13px; color: var(--muted); font-weight: 500; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: var(--panel-padding); margin-bottom: 16px; }
-.machines { border-radius: calc(var(--radius-machine) + var(--panel-padding) + 1px); }
 .machines-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .pill-tag { display: inline-block; font-size: 11px; font-weight: 400; background: var(--bg); padding: 2px 8px; border-radius: 6px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
