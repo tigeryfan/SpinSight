@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import DormPicker from './components/DormPicker.svelte';
   import Icon from './components/Icon.svelte';
   import MachineCard from './components/MachineCard.svelte';
@@ -8,6 +10,12 @@
 
   type Theme = 'light' | 'dark' | 'system';
   const themes: Theme[] = ['light', 'dark', 'system'];
+  function themeFade(node: Element) {
+    return fade(node, {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220,
+      easing: cubicOut,
+    });
+  }
   let theme = $state<Theme>('system');
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
@@ -63,7 +71,13 @@
         onclick={(event) => { if (event.detail === 0) startRefreshSpin(); void refresh(); }}>
         <span class="refresh-icon" bind:this={refreshIcon} class:spinning={refreshSpinning} onanimationend={() => refreshSpinning = false}><Icon name="refresh" /></span>
       </button>
-      <button class="pill theme-button" aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></button>
+      <button class="pill theme-button" aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
+        <span class="theme-content" aria-hidden="true">
+          {#key theme}
+            <span class="theme-option" transition:themeFade><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
+          {/key}
+        </span>
+      </button>
       <DormPicker bind:value={dorm} />
     </div>
   </header>
