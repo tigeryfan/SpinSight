@@ -12,11 +12,17 @@
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
   let loading = $state(true);
+  let refreshSpinning = $state(false);
+  let refreshIcon: HTMLSpanElement;
   let error = $state('');
   let announcement = $state('Loading demo machines.');
   let filtered = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
+
+  function startRefreshSpin() {
+    if (!refreshSpinning && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) refreshSpinning = true;
+  }
 
   async function refresh() {
     loading = true; error = '';
@@ -35,11 +41,14 @@
     try { localStorage.setItem('spinsight-theme', theme); } catch { /* Keep the session preference when storage is blocked. */ }
   }
   onMount(() => {
+    const stopRefreshSpin = () => refreshSpinning = false;
+    refreshIcon.addEventListener('animationcancel', stopRefreshSpin);
     try {
       const saved = localStorage.getItem('spinsight-theme');
       if (themes.includes(saved as Theme)) theme = saved as Theme;
     } catch { /* Default to the system theme. */ }
     void refresh();
+    return () => refreshIcon.removeEventListener('animationcancel', stopRefreshSpin);
   });
 </script>
 
@@ -49,7 +58,11 @@
   <header>
     <h1>SpinSight</h1>
     <div class="controls">
-      <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading} onclick={refresh}><span class:spinning={loading}><Icon name="refresh" /></span></button>
+      <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
+        onpointerdown={(event) => { if (event.button === 0) startRefreshSpin(); }}
+        onclick={(event) => { if (event.detail === 0) startRefreshSpin(); void refresh(); }}>
+        <span class="refresh-icon" bind:this={refreshIcon} class:spinning={refreshSpinning} onanimationend={() => refreshSpinning = false}><Icon name="refresh" /></span>
+      </button>
       <button class="pill theme-button" aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></button>
       <DormPicker bind:value={dorm} />
     </div>
