@@ -109,7 +109,8 @@
 </script>
 
 <svelte:window onpointerup={endDrag} onpointercancel={endDrag} />
-<section class="panel chart-panel" aria-label="Laundry usage history">
+<section class="panel chart-panel" aria-labelledby="usage-title">
+  <h2 id="usage-title">Usage</h2>
   <div class="chart-header">
     <div class="range" role="tablist" tabindex="-1" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}
       onpointerleave={() => { if (!dragMoved) dragState = null; }}>
@@ -165,6 +166,7 @@
 
 <style>
   .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
+  h2 { margin-bottom: 12px; }
   .chart-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 12px; }
   .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 6px; --range-radius: var(--radius-panel); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
