@@ -47,7 +47,7 @@
   <button class="pill" bind:this={trigger} aria-label={`Dorm: ${value}`} aria-haspopup="menu" aria-expanded={open} aria-controls="dorm-menu"
     onclick={() => open ? close() : show()}
     onkeydown={(event) => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); show(); } }}>
-    <span class="dorm-dot" aria-hidden="true"></span><span>{value}</span><Icon name="chevron" />
+    <span>{value}</span><Icon name="chevron" />
   </button>
   {#if open}
     <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" inert={!open} transition:dropdown bind:this={menu} onkeydown={keydown}>
@@ -63,7 +63,6 @@
 
 <style>
   .dorm-picker { position: relative; }
-  .dorm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
   .dorm-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 190px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--popover-shadow); }
   .dorm-menu button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 10px; border: 0; border-radius: 4px; background: transparent; color: var(--ink); text-align: left; }
   .dorm-menu button:hover { background: var(--bg); }
