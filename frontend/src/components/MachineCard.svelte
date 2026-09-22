@@ -1,16 +1,22 @@
 <script lang="ts">
   import type { Machine } from '../lib/data';
-  let { machine, ranking, showDorm }: { machine: Machine; ranking: { rank: number; total: number } | null; showDorm: boolean } = $props();
+  let { machine, ranking, showDorm, animationKey }: { machine: Machine; ranking: { rank: number; total: number } | null; showDorm: boolean; animationKey: number } = $props();
   let expanded = $state(false);
   let dismissed = $state(false);
-  let percentage = $derived(Math.round((machine.progress ?? (machine.status === 'Completed' || machine.estimatedComplete ? 1 : 0)) * 100));
+  let progressRatio = $derived(Math.min(1, Math.max(0, machine.progress ?? (machine.status === 'Completed' || machine.estimatedComplete ? 1 : 0))));
+  let percentage = $derived(Math.round(progressRatio * 100));
+  let progressWidth = $derived(`${progressRatio * 100}%`);
   let status = $derived(machine.estimatedComplete ? 'Estimated complete' : machine.status === 'Running'
     ? machine.minutesLeft === null ? 'Running · time unknown' : `${machine.minutesLeft}m left`
     : machine.status === 'Completed' ? 'Awaiting unload' : machine.status);
 </script>
 
 <div class="machine" class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running' && !machine.estimatedComplete} class:completed={machine.status === 'Completed' || machine.estimatedComplete} class:expanded class:dismissed>
-  <div class="progress-track" aria-hidden="true"><div class="progress-fill" style:width={`${percentage}%`}></div></div>
+  <div class="progress-track" aria-hidden="true">
+    {#key `${animationKey}-${percentage}`}
+      <div class="progress-fill" style:--progress-width={progressWidth}></div>
+    {/key}
+  </div>
   <button class="machine-button" aria-expanded={expanded} aria-controls={`details-${machine.id}`} aria-label={`${machine.dorm}, ${machine.machineType} ${machine.machineName}, ${status}. ${expanded ? 'Hide' : 'Show'} details`}
     onclick={() => { expanded = !expanded; dismissed = !expanded; }}
     onpointerenter={() => dismissed = false} onfocus={() => dismissed = false}
@@ -36,7 +42,8 @@
   .machine.dry { --machine-color: var(--dry); }
   .machine:hover, .machine:focus-within { border-color: var(--muted); z-index: 2; }
   .progress-track { position: absolute; inset: 0; overflow: hidden; border-radius: max(0px, calc(var(--radius-machine) - 1px)); pointer-events: none; background: color-mix(in srgb, var(--machine-color) 5%, transparent); }
-  .progress-fill { height: 100%; background: color-mix(in srgb, var(--machine-color) 28%, transparent); }
+  .progress-fill { width: 0; height: 100%; background: color-mix(in srgb, var(--machine-color) 28%, transparent); animation: fill-progress .6s cubic-bezier(.16, 1, .3, 1) both; }
+  @keyframes fill-progress { from { width: 0; } to { width: var(--progress-width); } }
   .completed .progress-fill { opacity: .55; }
   .machine-button { display: flex; align-items: center; width: 100%; position: relative; gap: 8px; border: 0; border-radius: max(0px, calc(var(--radius-machine) - 1px)); padding: 15px 16px; background: transparent; color: var(--ink); text-align: left; }
   .name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; flex: 1; min-width: 0; font-weight: 600; font-size: 13px; }
@@ -52,5 +59,8 @@
   dd { margin: 0; }
   .extra { border-top: 1px solid currentColor; margin-top: 5px; padding-top: 8px; }
   @media (hover: none) { .machine:not(.expanded) .machine-details { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .machine, .machine-details { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .machine, .machine-details { transition: none; }
+    .progress-fill { animation: none; width: var(--progress-width); }
+  }
 </style>

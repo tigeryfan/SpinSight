@@ -82,6 +82,11 @@ function weekEnd(dates: Date[]): Date {
   return end;
 }
 
+export function weeklyChartBounds(dates: Date[]): { start: number; end: number } | null {
+  if (dates.length < 7) return null;
+  return { start: dates[0].getTime(), end: weekEnd(dates).getTime() };
+}
+
 // Estimate observed running time after each poll, stopping at the next observation,
 // ETA, or 30-minute scheduled interval. Missing gaps are never filled beyond that cap.
 // These are estimates from samples, not complete measured cycle durations.

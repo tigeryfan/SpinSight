@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
-  import { dailyUsage, weeklyUsage, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
-  let { machines, history, dates }: { machines: Machine[]; history: Snapshot['history']; dates: Date[] } = $props();
+  import { dailyUsage, weeklyUsage, weeklyChartBounds, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
+  let { machines, history, dates, animationKey }: { machines: Machine[]; history: Snapshot['history']; dates: Date[]; animationKey: number } = $props();
   let view = $state(-1);
   let width = $state(700);
   let active = $state<number | null>(null);
@@ -14,7 +14,9 @@
   let tooltipWidth = $state(154);
   let tooltipHeight = $state(92);
   let chartData: SVGGElement;
+  let chartReveal: SVGRectElement;
   let chartAnimation: Animation | undefined;
+  let redrawRequest = $state(0);
   let tabs: HTMLDivElement;
   const emptyPoint: UsagePoint = { label: '', timestamp: 0, washers: null, dryers: null };
   let tabBounds = $state<{ center: number; width: number; height: number }[]>([]);
@@ -40,6 +42,7 @@
   const formatDate = (date: Date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const formatCount = (value: number | null) => value === null ? 'No data' : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
   let points = $derived(view === -1 ? weeklyUsage(machines, history, dates) : dailyUsage(machines, history, dates[view]));
+  let weekBounds = $derived(weeklyChartBounds(dates));
   let hasReadings = $derived(points.some(point => point.washers !== null || point.dryers !== null));
   let hasGaps = $derived(points.some(point => point.washers === null || point.dryers === null));
   let maxUsage = $derived(Math.max(0, ...points.flatMap(point => [point.washers ?? 0, point.dryers ?? 0])));
@@ -51,13 +54,14 @@
   const top = 16;
   const bottom = 226;
   let plotWidth = $derived(chartWidth - left - 16);
-  let firstTimestamp = $derived(points[0]?.timestamp ?? 0);
-  let lastTimestamp = $derived(points.at(-1)?.timestamp ?? firstTimestamp);
+  let firstTimestamp = $derived(view === -1 ? weekBounds?.start ?? points[0]?.timestamp ?? 0 : points[0]?.timestamp ?? 0);
+  let lastTimestamp = $derived(view === -1 ? weekBounds?.end ?? points.at(-1)?.timestamp ?? firstTimestamp : points.at(-1)?.timestamp ?? firstTimestamp);
   let timeSpan = $derived(Math.max(0, lastTimestamp - firstTimestamp));
-  const x = (i: number) => {
-    if (!points.length || timeSpan === 0) return left + plotWidth / 2;
-    return left + (points[i].timestamp - firstTimestamp) / timeSpan * plotWidth;
+  const xAt = (timestamp: number) => {
+    if (timeSpan === 0) return left + plotWidth / 2;
+    return left + (timestamp - firstTimestamp) / timeSpan * plotWidth;
   };
+  const x = (i: number) => xAt(points[i].timestamp);
   const y = (value: number) => bottom - (value / axisMax) * (bottom - top);
   const path = (key: 'washers' | 'dryers', filled = false) => {
     const segments: { index: number; value: number }[][] = [];
@@ -87,7 +91,13 @@
   };
   let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
   let xLabelStep = $derived(Math.max(1, Math.ceil(points.length / (view === -1 ? 8 : width < 450 ? 6 : 10))));
+  let weeklyAxisLabels = $derived(view === -1 && weekBounds ? dates.slice(0, 7).map((date, index) => {
+    const start = date.getTime();
+    const end = index < 6 ? dates[index + 1].getTime() : weekBounds.end;
+    return { label: days[index], timestamp: start + (end - start) / 2 };
+  }) : []);
   let title = $derived(view === -1 ? 'Last full week' : `${dayNames[view]}, ${formatDate(dates[view])}`);
+  let dataKey = $derived(points.map(point => `${point.timestamp}:${point.washers ?? 'x'}:${point.dryers ?? 'x'}`).join('|'));
   let selected = $derived(points[Math.min(hoverIndex, points.length - 1)] ?? emptyPoint);
   let hoverX = $derived(points.length ? x(Math.min(hoverIndex, points.length - 1)) : left + plotWidth / 2);
   let washerY = $derived(y(selected.washers ?? 0));
@@ -99,19 +109,37 @@
   let tooltipY = $derived(Math.max(8, Math.min(height - tooltipHeight - 8,
     midY + 12 + tooltipHeight > height - 8 ? midY - tooltipHeight - 12 : midY + 12)));
 
+  function redrawChart() {
+    if (!chartData || !chartReveal) return;
+    chartAnimation?.cancel();
+    const revealWidth = `${chartWidth}px`;
+    chartReveal.style.width = revealWidth;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    chartReveal.style.width = '0px';
+    chartAnimation = chartReveal.animate(
+      [{ width: '0px' }, { width: revealWidth }],
+      { duration: 520, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' },
+    );
+    chartAnimation.onfinish = () => {
+      chartReveal.style.width = revealWidth;
+      chartAnimation = undefined;
+    };
+  }
+
+  $effect(() => {
+    animationKey;
+    dataKey;
+    redrawRequest;
+    chartWidth;
+    void tick().then(() => { if (!dragMoved) redrawChart(); });
+  });
+
   function select(index: number, focus = false, animate = true) {
     if (index === view) return;
     chartAnimation?.cancel();
     view = index; active = null; hoverIndex = 0;
     thumbAnimated = animate;
-    if (animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      void tick().then(() => {
-        if (view === index && !dragMoved) chartAnimation = chartData.animate(
-          [{ opacity: 0.5 }, { opacity: 1 }],
-          { duration: 180, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
-        );
-      });
-    }
+    if (animate) redrawRequest += 1;
     if (focus) tabs.querySelectorAll('button')[index + 1]?.focus();
   }
   onDestroy(() => chartAnimation?.cancel());
@@ -194,11 +222,12 @@
           <linearGradient id="wash-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--wash)" stop-opacity=".18" /><stop offset="1" stop-color="var(--wash)" stop-opacity="0" /></linearGradient>
           <linearGradient id="dry-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--dry)" stop-opacity=".14" /><stop offset="1" stop-color="var(--dry)" stop-opacity="0" /></linearGradient>
         </defs>
+        <clipPath id="usage-reveal"><rect bind:this={chartReveal} width={chartWidth} height={height} /></clipPath>
         {#each ticks as value}
           <line class="grid-line" x1={left} x2={chartWidth - 16} y1={y(value)} y2={y(value)} />
           <text class="axis" x={left - 10} y={y(value) + 4} text-anchor="end">{value}</text>
         {/each}
-        <g class="chart-data" bind:this={chartData}>
+        <g class="chart-data" bind:this={chartData} clip-path="url(#usage-reveal)">
           <path d={path('washers', true)} fill="url(#wash-area)" /><path d={path('dryers', true)} fill="url(#dry-area)" />
           <path class="series washers" d={path('washers')} /><path class="series dryers" d={path('dryers')} />
           {#each points as point, index}
@@ -211,11 +240,17 @@
           {/each}
         </g>
         {#if !hasReadings}<text class="axis" x={chartWidth / 2} y={height / 2} text-anchor="middle">No readings for this period</text>{/if}
-        {#each points as point, index}
-          {#if index === 0 || index === points.length - 1 || index % xLabelStep === 0}
-            <text class="axis" x={x(index)} y={height - 9} text-anchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}>{point.label}</text>
-          {/if}
-        {/each}
+        {#if view === -1}
+          {#each weeklyAxisLabels as tick, index}
+            <text class="axis" x={xAt(tick.timestamp)} y={height - 9} text-anchor={index === 0 ? 'start' : index === weeklyAxisLabels.length - 1 ? 'end' : 'middle'}>{tick.label}</text>
+          {/each}
+        {:else}
+          {#each points as point, index}
+            {#if index === 0 || index === points.length - 1 || index % xLabelStep === 0}
+              <text class="axis" x={x(index)} y={height - 9} text-anchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}>{point.label}</text>
+            {/if}
+          {/each}
+        {/if}
         <g class="hover-overlay" class:visible={active !== null && (selected.washers !== null || selected.dryers !== null)} class:direct={active !== null && !glide} aria-hidden="true">
           <line class="hover-line hover-line-x" x1="0" x2="0" y1={top} y2={bottom} style:transform={`translateX(${hoverX}px)`} />
           {#if selected.washers !== null}

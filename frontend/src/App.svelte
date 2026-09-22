@@ -19,6 +19,7 @@
   let theme = $state<Theme>('system');
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
+  let dataRevision = $state(0);
   let loading = $state(true);
   let refreshSpinning = $state(false);
   let refreshIcon: HTMLSpanElement;
@@ -44,6 +45,7 @@
     loading = true; error = '';
     try {
       snapshot = await (scrape ? refreshSnapshot() : loadSnapshot());
+      dataRevision += 1;
       now = Date.now();
       if (dorm !== 'All Dorms' && !snapshot.machines.some(machine => machine.dorm === dorm)) dorm = 'All Dorms';
       announcement = snapshot.refreshedAt
@@ -114,7 +116,7 @@
     {/each}
   </section>
   {#if snapshot}
-    <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} />
+    <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
   {:else}
     <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
   {/if}
@@ -124,7 +126,7 @@
       <div class="grid">
         {#each filtered as machine (machine.id)}
           {@const ranking = usageRank(machine, filtered)}
-          <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms'} />
+          <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms'} animationKey={dataRevision} />
         {/each}
       </div>
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
