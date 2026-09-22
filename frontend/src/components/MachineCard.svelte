@@ -23,7 +23,7 @@
   {/if}
   <div class="machine-details" id={`details-${machine.id}`}>
     <dl>
-      <div><dt>Last Mon–Sun usage (est.)</dt><dd>{machine.usageHoursPastWeek === null ? 'No readings' : `${machine.usageHoursPastWeek.toFixed(1)}h`}</dd></div>
+      <div><dt>Last Mon–Sun usage</dt><dd>{machine.usageHoursPastWeek === null ? 'No readings' : `${machine.usageHoursPastWeek.toFixed(1)}h`}</dd></div>
       <div><dt>Usage rank</dt><dd>{ranking ? `#${ranking.rank} of ${ranking.total}` : 'No readings'}</dd></div>
       {#if machine.estimatedCompletionTime && machine.status === 'Running'}<div><dt>Estimated finish</dt><dd>{new Date(machine.estimatedCompletionTime).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</dd></div>{/if}
       {#if machine.topOffAvailable}<div class="extra"><dt>Top off</dt><dd>Available</dd></div>{/if}
