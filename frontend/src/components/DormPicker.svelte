@@ -2,14 +2,13 @@
   import { tick } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
-  import { dorms } from '../lib/data';
   import Icon from './Icon.svelte';
-  let { value = $bindable('All Dorms') }: { value?: string } = $props();
+  let { value = $bindable('All Dorms'), dorms }: { value?: string; dorms: string[] } = $props();
   let open = $state(false);
   let root: HTMLDivElement;
   let trigger: HTMLButtonElement;
   let menu = $state<HTMLDivElement>();
-  const options = ['All Dorms', ...dorms];
+  let options = $derived(['All Dorms', ...dorms]);
 
   function dropdown(node: Element) {
     return fly(node, {
