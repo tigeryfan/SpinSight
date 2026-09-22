@@ -30,3 +30,14 @@ export interface MachineSnapshot {
   top_off_cost: number | null;
   minutes_per_top_off: number | null;
 }
+
+export interface DashboardData {
+  machines: MachineSnapshot[];
+  history: MachineSnapshot[];
+  refreshedAt: string | null;
+}
+
+export interface ScrapeResult {
+  pollTime: string;
+  count: number;
+}

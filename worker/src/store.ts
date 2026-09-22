@@ -1,37 +1,45 @@
 import type { Env } from './env';
-import type { MachineSnapshot } from './types';
+import type { DashboardData, MachineSnapshot } from './types';
 
-/** Insert or replace snapshots in chunks (max 50 per batch for safety) */
+/** A poll is one transaction so readers never see a partially saved snapshot. */
 export async function insertSnapshots(env: Env, rows: MachineSnapshot[]): Promise<void> {
-  const db = env.DB;
-  const chunkSize = 50;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    const statements: string[] = [];
-    const params: unknown[] = [];
-    for (const r of chunk) {
-      statements.push(`INSERT OR REPLACE INTO machine_snapshots (
-        bluetooth_address, poll_time, machine_name, location_name, status,
-        platform_type, machine_type, estimated_completion_time,
-        top_off_available, multi_top_off_available, super_cycle_available,
-        top_off_cost, minutes_per_top_off
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`);
-      params.push(
-        r.bluetooth_address,
-        r.poll_time,
-        r.machine_name,
-        r.location_name,
-        r.status,
-        r.platform_type,
-        r.machine_type,
-        r.estimated_completion_time,
-        r.top_off_available,
-        r.multi_top_off_available,
-        r.super_cycle_available,
-        r.top_off_cost,
-        r.minutes_per_top_off,
-      );
-    }
-    await db.batch(statements.map((sql, idx) => db.prepare(sql).bind(...params.slice(idx * 13, (idx + 1) * 13))));
-  }
+  if (rows.length === 0) return;
+  const statement = env.DB.prepare(`INSERT OR REPLACE INTO machine_snapshots (
+    bluetooth_address, poll_time, machine_name, location_name, status,
+    platform_type, machine_type, estimated_completion_time,
+    top_off_available, multi_top_off_available, super_cycle_available,
+    top_off_cost, minutes_per_top_off
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  await env.DB.batch(rows.map((row) => statement.bind(
+    row.bluetooth_address,
+    row.poll_time,
+    row.machine_name,
+    row.location_name,
+    row.status,
+    row.platform_type,
+    row.machine_type,
+    row.estimated_completion_time,
+    row.top_off_available,
+    row.multi_top_off_available,
+    row.super_cycle_available,
+    row.top_off_cost,
+    row.minutes_per_top_off,
+  )));
+}
+
+/** Read both views from D1; this path never calls the upstream service. */
+export async function readDashboard(env: Env, start: string, end: string): Promise<DashboardData> {
+  const [latest, history] = await env.DB.batch<MachineSnapshot>([
+    env.DB.prepare(`SELECT * FROM machine_snapshots
+      WHERE poll_time = (SELECT MAX(poll_time) FROM machine_snapshots)
+      ORDER BY bluetooth_address`),
+    env.DB.prepare(`SELECT * FROM machine_snapshots
+      WHERE poll_time >= ? AND poll_time < ?
+      ORDER BY poll_time, bluetooth_address`).bind(start, end),
+  ]);
+  return {
+    machines: latest.results,
+    history: history.results,
+    refreshedAt: latest.results[0]?.poll_time ?? null,
+  };
 }

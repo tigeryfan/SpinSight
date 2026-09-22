@@ -1,8 +1,10 @@
 import type { Env } from './env';
 import { fetchGreenwaldRoomView } from './upstream';
 import { insertSnapshots } from './store';
-import type { GreenwaldMachine, MachineSnapshot } from './types';
-import { withRetry, RetryExhaustedError, RetryOpts } from './retry';
+import type { GreenwaldMachine, MachineSnapshot, ScrapeResult } from './types';
+import { withRetry, type RetryOpts } from './retry';
+
+export class RefreshError extends Error {}
 
 /** Convert raw machine to snapshot */
 function toMachineSnapshot(raw: GreenwaldMachine, pollTime: string): MachineSnapshot {
@@ -24,8 +26,7 @@ function toMachineSnapshot(raw: GreenwaldMachine, pollTime: string): MachineSnap
 }
 
 /** Core scrape logic */
-export async function runScrape(env: Env): Promise<void> {
-  const pollTime = new Date().toISOString();
+export async function runScrape(env: Env): Promise<ScrapeResult> {
   const retryOpts: RetryOpts = {
     maxAttempts: 5,
     baseDelayMs: 1000,
@@ -48,16 +49,13 @@ export async function runScrape(env: Env): Promise<void> {
   let machines: GreenwaldMachine[];
   try {
     machines = await withRetry(() => fetchGreenwaldRoomView(env), retryOpts);
-  } catch (e) {
-    if (e instanceof RetryExhaustedError) {
-      console.error('Scrape failed after retries:', e.lastError);
-    } else {
-      console.error('Unexpected error during scrape:', e);
-    }
-    return; // nothing to store
+  } catch (error) {
+    throw new RefreshError('Unable to refresh machine data.', { cause: error });
   }
 
+  const pollTime = new Date().toISOString();
   const snapshots = machines.map((m) => toMachineSnapshot(m, pollTime));
   await insertSnapshots(env, snapshots);
   console.info(`Scrape completed ${pollTime}: fetched ${machines.length}, inserted ${snapshots.length}`);
+  return { pollTime, count: snapshots.length };
 }

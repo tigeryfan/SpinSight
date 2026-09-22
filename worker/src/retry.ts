@@ -44,6 +44,7 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOpts): Promi
       }
     }
     attempt++;
+    if (attempt >= opts.maxAttempts) break;
     // Determine delay
     let delayMs: number;
     // If we have a response with Retry-After header, use it
