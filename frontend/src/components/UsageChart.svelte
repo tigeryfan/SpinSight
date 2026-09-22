@@ -40,6 +40,7 @@
   const formatCount = (value: number | null) => value === null ? 'No data' : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
   let points = $derived(view === -1 ? weeklyUsage(machines, history, dates) : dailyUsage(machines, history, dates[view]));
   let hasReadings = $derived(points.some(point => point.washers !== null || point.dryers !== null));
+  let hasGaps = $derived(points.some(point => point.washers === null || point.dryers === null));
   let capacity = $derived(Math.ceil(Math.max(1, machines.filter(m => m.machineType === 'Washer').length, machines.filter(m => m.machineType === 'Dryer').length,
     ...points.flatMap(point => [point.washers ?? 0, point.dryers ?? 0]))));
   let chartWidth = $derived(Math.max(width, 240));
@@ -224,7 +225,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])} · Average machines running in recorded readings. Gaps have no readings.</p>
+  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])}{#if hasGaps} · Gaps have no readings.{/if}</p>
 </section>
 
 <style>
@@ -273,14 +274,19 @@
   @media (max-width: 600px) {
     .chart-panel { padding: 16px 12px 10px; }
   }
-  @container (max-width: 600px) {
+  @container (max-width: 499px) {
     .range { width: 100%; justify-content: space-between; gap: 4px; }
     .range button { padding: 6px 0; font-size: 11px; }
     .range-thumb { font-size: 11px; }
     .range button span { padding: 4px; }
   }
+  @container (min-width: 500px) {
+    .chart-header { grid-template-columns: auto auto 1fr; grid-template-areas: 'title range legend'; column-gap: 12px; }
+    .range { gap: 2px; }
+  }
   @container (min-width: 660px) {
-    .chart-header { grid-template-columns: auto auto 1fr; grid-template-areas: 'title range legend'; }
+    .chart-header { column-gap: 16px; }
+    .range { gap: 6px; }
   }
   @media (prefers-reduced-motion: reduce) { .range-thumb, .range-thumb.direct, .range button, .hover-line, .hover-dot, .chart-tooltip { transition: none; } }
 </style>
