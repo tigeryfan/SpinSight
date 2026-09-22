@@ -168,7 +168,7 @@
   .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
   h2 { flex: none; }
   .chart-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 12px; }
-  .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
+  .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid transparent; border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
   .range button { z-index: 1; padding: 3px 8px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 12px; line-height: 18px; cursor: grab; }
   .range button:active { cursor: grabbing; }
