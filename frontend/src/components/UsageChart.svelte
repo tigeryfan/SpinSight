@@ -110,8 +110,8 @@
 
 <svelte:window onpointerup={endDrag} onpointercancel={endDrag} />
 <section class="panel chart-panel" aria-labelledby="usage-title">
-  <h2 id="usage-title">Usage</h2>
   <div class="chart-header">
+    <h2 id="usage-title">Usage</h2>
     <div class="range" role="tablist" tabindex="-1" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}
       onpointerleave={() => { if (!dragMoved) dragState = null; }}>
       <span class="range-thumb" class:direct={!thumbAnimated} style:transform={thumbOffset === null ? `translateX(${(view + 1) * 100}%)` : `translateX(${thumbOffset}px)`} aria-hidden="true"></span>
@@ -166,11 +166,11 @@
 
 <style>
   .chart-panel { padding: 20px 22px 14px; border-radius: var(--radius-panel); }
-  h2 { margin-bottom: 12px; }
+  h2 { flex: none; }
   .chart-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 12px; }
-  .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 6px; --range-radius: var(--radius-panel); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
+  .range { flex: 1 1 380px; max-width: 480px; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: grid; grid-template-columns: repeat(8, 1fr); padding: var(--range-inset); border: 1px solid var(--line); border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
-  .range button { z-index: 1; padding: 7px 8px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 13px; cursor: grab; }
+  .range button { z-index: 1; padding: 3px 8px; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 12px; line-height: 18px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button[aria-selected='true'] { color: var(--selected-ink); }
   .range-thumb { position: absolute; left: var(--range-inset); top: var(--range-inset); bottom: var(--range-inset); width: calc((100% - 2 * var(--range-inset)) / 8); border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); background: var(--selected); transition: transform .28s cubic-bezier(.4, 0, .2, 1); }
