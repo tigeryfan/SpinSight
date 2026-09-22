@@ -1,41 +1,74 @@
-# macOS
+# OS
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Project-specific
-config.toml
-bot_state.json
-laundry_data.sqlite
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Agents
+# Agent / tooling state
 .claude/
 .codex/
-
-# Skills
 .impeccable/
 
-# Node / Bun / Wrangler
-node_modules
-dist
-dist-ssr
-*.local
+# Node / Bun
+node_modules/
+frontend/node_modules/
+worker/node_modules/
+bun.lockb
+
+# Build output
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+.cache/
+
+# Python
+.venv/
+.venv-test/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Cloudflare / Wrangler
 .wrangler/
 .dev.vars
+.dev.vars.*
+.dev.vars.example
+
+# Secrets / local config
+config.toml
+*.local
+*.env
+.env
+.env.local
+.env.*.local
+
+# Database / runtime state
+*.sqlite
+*.sqlite-journal
+example_state.json
+bot_state.json
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+bun-debug.log*
 
-# Editors
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Coverage
+coverage/
+.nyc_output/
+
+# OS temp
+.tmp/
+tmp/

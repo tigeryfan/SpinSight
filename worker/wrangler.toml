@@ -1,0 +1,16 @@
+name = "spinsight-scraper"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "spinsight-db"
+database_id = "b601e0b5-5ef1-4e35-a658-abb0c7687d30"
+
+# Secrets (set via `wrangler secret put`, not committed):
+#   GREENWALD_AUTHKEY
+#   GREENWALD_COOKIE
+#   GREENWALD_UA

@@ -2,14 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0E1318" />
-    <meta name="description" content="Live laundry room status for your dorm. See which washers and dryers are free right now." />
-    <title>SpinSight — Laundry status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Check dorm laundry availability and explore washer and dryer usage with SpinSight." />
+    <meta name="color-scheme" content="light dark" />
+    <title>SpinSight</title>
+    <script>
+      try {
+        const theme = localStorage.getItem('spinsight-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch { /* System theme works when storage is unavailable. */ }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
