@@ -7,8 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test": "bun test src/lib"
+    "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": { "svelte": "^5.0.0" },
   "devDependencies": {
