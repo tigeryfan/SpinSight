@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
-  import { dailyUsage, weeklyUsage, days, dayNames, type Machine, type Snapshot } from '../lib/data';
+  import { dailyUsage, weeklyUsage, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
   let { machines, history, dates }: { machines: Machine[]; history: Snapshot['history']; dates: Date[] } = $props();
   let view = $state(-1);
   let width = $state(700);
@@ -16,6 +16,7 @@
   let chartData: SVGGElement;
   let chartAnimation: Animation | undefined;
   let tabs: HTMLDivElement;
+  const emptyPoint: UsagePoint = { label: '', timestamp: 0, washers: null, dryers: null };
   let tabBounds = $state<{ center: number; width: number; height: number }[]>([]);
   let thumb = $derived(tabBounds[view + 1]);
   onMount(() => {
@@ -41,16 +42,23 @@
   let points = $derived(view === -1 ? weeklyUsage(machines, history, dates) : dailyUsage(machines, history, dates[view]));
   let hasReadings = $derived(points.some(point => point.washers !== null || point.dryers !== null));
   let hasGaps = $derived(points.some(point => point.washers === null || point.dryers === null));
-  let capacity = $derived(Math.ceil(Math.max(1, machines.filter(m => m.machineType === 'Washer').length, machines.filter(m => m.machineType === 'Dryer').length,
-    ...points.flatMap(point => [point.washers ?? 0, point.dryers ?? 0]))));
+  let maxUsage = $derived(Math.max(0, ...points.flatMap(point => [point.washers ?? 0, point.dryers ?? 0])));
+  let tickStep = $derived(Math.max(1, Math.ceil(Math.max(1, maxUsage) / 4)));
+  let axisMax = $derived(Math.max(1, tickStep * Math.ceil(Math.max(1, maxUsage) / tickStep)));
   let chartWidth = $derived(Math.max(width, 240));
   const height = 260;
   const left = 32;
   const top = 16;
   const bottom = 226;
   let plotWidth = $derived(chartWidth - left - 16);
-  const x = (i: number) => left + i / Math.max(1, points.length - 1) * plotWidth;
-  const y = (value: number) => bottom - (value / capacity) * (bottom - top);
+  let firstTimestamp = $derived(points[0]?.timestamp ?? 0);
+  let lastTimestamp = $derived(points.at(-1)?.timestamp ?? firstTimestamp);
+  let timeSpan = $derived(Math.max(0, lastTimestamp - firstTimestamp));
+  const x = (i: number) => {
+    if (!points.length || timeSpan === 0) return left + plotWidth / 2;
+    return left + (points[i].timestamp - firstTimestamp) / timeSpan * plotWidth;
+  };
+  const y = (value: number) => bottom - (value / axisMax) * (bottom - top);
   const path = (key: 'washers' | 'dryers', filled = false) => {
     const segments: { index: number; value: number }[][] = [];
     let segment: { index: number; value: number }[] = [];
@@ -77,10 +85,11 @@
       return filled ? `${curve} L${x(values[values.length - 1].index)},${bottom} L${x(values[0].index)},${bottom} Z` : curve;
     }).join(' ');
   };
-  let ticks = $derived(Array.from({ length: Math.min(capacity, 4) + 1 }, (_, i) => Math.round(i * capacity / Math.min(capacity, 4))));
+  let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
+  let xLabelStep = $derived(Math.max(1, Math.ceil(points.length / (view === -1 ? 8 : width < 450 ? 6 : 10))));
   let title = $derived(view === -1 ? 'Last full week' : `${dayNames[view]}, ${formatDate(dates[view])}`);
-  let selected = $derived(points[Math.min(hoverIndex, points.length - 1)]);
-  let hoverX = $derived(x(Math.min(hoverIndex, points.length - 1)));
+  let selected = $derived(points[Math.min(hoverIndex, points.length - 1)] ?? emptyPoint);
+  let hoverX = $derived(points.length ? x(Math.min(hoverIndex, points.length - 1)) : left + plotWidth / 2);
   let washerY = $derived(y(selected.washers ?? 0));
   let dryerY = $derived(y(selected.dryers ?? 0));
   let midY = $derived((washerY + dryerY) / 2);
@@ -115,13 +124,18 @@
     if (index !== undefined) { event.preventDefault(); select(index, true, false); }
   }
   function showPoint(index: number) {
+    if (!points.length) return;
     glide = active !== null;
-    hoverIndex = index;
-    active = index;
+    hoverIndex = Math.max(0, Math.min(points.length - 1, index));
+    active = hoverIndex;
   }
   function scrub(event: PointerEvent) {
+    if (!points.length) return;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    showPoint(Math.max(0, Math.min(points.length - 1, Math.round((event.clientX - rect.left - left) / plotWidth * (points.length - 1)))));
+    if (!rect.width) return;
+    const chartX = Math.max(left, Math.min(chartWidth - 16, (event.clientX - rect.left) / rect.width * chartWidth));
+    const nearest = points.reduce((best, point, index) => Math.abs(x(index) - chartX) < Math.abs(x(best) - chartX) ? index : best, 0);
+    showPoint(nearest);
   }
   function startDrag(event: PointerEvent, index: number) {
     if (event.button !== 0) return;
@@ -175,7 +189,7 @@
   </div>
   <div id="usage-panel" role="tabpanel" aria-labelledby={`period-${view + 1}`}>
     <div class="chart-wrap" bind:clientWidth={width}>
-      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}${view === -1 ? `, ${formatDate(dates[0])}–${formatDate(dates[6])}, daily average` : ''}: washers and dryers in use. Use the chart slider to explore values.`}>
+      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}: washers and dryers in use. Use the chart slider to explore values.`}>
         <defs>
           <linearGradient id="wash-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--wash)" stop-opacity=".18" /><stop offset="1" stop-color="var(--wash)" stop-opacity="0" /></linearGradient>
           <linearGradient id="dry-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--dry)" stop-opacity=".14" /><stop offset="1" stop-color="var(--dry)" stop-opacity="0" /></linearGradient>
@@ -198,7 +212,7 @@
         </g>
         {#if !hasReadings}<text class="axis" x={chartWidth / 2} y={height / 2} text-anchor="middle">No readings for this period</text>{/if}
         {#each points as point, index}
-          {#if view === -1 || index === 0 || index === 23 || index % (width < 450 ? 6 : 3) === 0 && index < 22}
+          {#if index === 0 || index === points.length - 1 || index % xLabelStep === 0}
             <text class="axis" x={x(index)} y={height - 9} text-anchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}>{point.label}</text>
           {/if}
         {/each}
@@ -214,7 +228,7 @@
           {/if}
         </g>
       </svg>
-      <input class="chart-input" type="range" min="0" max={points.length - 1} step="1" value={active ?? 0} aria-label="Explore chart values"
+      <input class="chart-input" type="range" min="0" max={Math.max(0, points.length - 1)} step="1" value={active ?? 0} aria-label="Explore chart values" disabled={points.length === 0}
         aria-valuetext={`${selected.label}, washers: ${formatCount(selected.washers)}, dryers: ${formatCount(selected.dryers)}`}
         oninput={(event) => showPoint(Number(event.currentTarget.value))} onpointermove={scrub} onpointerdown={scrub}
         onpointerleave={(event) => { if (document.activeElement !== event.currentTarget) active = null; }}
@@ -225,7 +239,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])}{#if hasGaps} · Gaps have no readings.{/if}</p>
+  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])} · Each point is one database poll.{#if hasGaps} Gaps have no readings.{/if}</p>
 </section>
 
 <style>

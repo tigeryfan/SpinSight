@@ -21,7 +21,12 @@ export interface Machine {
   estimatedCompletionTime: string | null;
 }
 
-export interface UsagePoint { label: string; washers: number | null; dryers: number | null }
+export interface UsagePoint {
+  label: string;
+  timestamp: number;
+  washers: number | null;
+  dryers: number | null;
+}
 export interface Snapshot {
   machines: Machine[];
   history: MachineSnapshot[];
@@ -194,32 +199,61 @@ function dateKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-// Average the recorded running count at each observed poll. A type with no samples
-// in a bucket stays null; zero means that type was observed without running machines.
-function recordedUsage(machines: Machine[], history: MachineSnapshot[], labels: string[], bucket: (date: Date) => number): UsagePoint[] {
+const timeLabel = (date: Date) => date.toLocaleTimeString(undefined, {
+  hour: '2-digit', minute: '2-digit', hour12: false,
+});
+
+// Count running machines at every timestamp stored in the database. A type with no
+// rows at a timestamp stays null; zero means that type was observed without running machines.
+function recordedUsage(
+  machines: Machine[],
+  history: MachineSnapshot[],
+  include: (date: Date) => boolean,
+  label: (date: Date) => string,
+): UsagePoint[] {
   const selected = new Map(machines.map(machine => [machine.id, machine.machineType]));
-  const samples = labels.map(() => ({ washers: new Map<number, number>(), dryers: new Map<number, number>() }));
+  const samples = new Map<number, { washers: number; dryers: number; washerRows: number; dryerRows: number }>();
   for (const row of history) {
     const type = selected.get(row.bluetooth_address);
     if (type !== 'Washer' && type !== 'Dryer') continue;
     const time = timestamp(row.poll_time);
     if (time === null) continue;
-    const index = bucket(new Date(time));
-    if (index < 0 || index >= labels.length) continue;
-    const counts = samples[index][type === 'Washer' ? 'washers' : 'dryers'];
-    counts.set(time, (counts.get(time) ?? 0) + (row.status === 'Running' ? 1 : 0));
+    const date = new Date(time);
+    if (!include(date)) continue;
+    const counts = samples.get(time) ?? { washers: 0, dryers: 0, washerRows: 0, dryerRows: 0 };
+    if (type === 'Washer') {
+      counts.washerRows += 1;
+      if (row.status === 'Running') counts.washers += 1;
+    } else {
+      counts.dryerRows += 1;
+      if (row.status === 'Running') counts.dryers += 1;
+    }
+    samples.set(time, counts);
   }
-  const average = (counts: Map<number, number>) => counts.size ? [...counts.values()].reduce((sum, count) => sum + count, 0) / counts.size : null;
-  return labels.map((label, index) => ({ label, washers: average(samples[index].washers), dryers: average(samples[index].dryers) }));
+  return [...samples.entries()].sort(([a], [b]) => a - b).map(([time, counts]) => ({
+    label: label(new Date(time)),
+    timestamp: time,
+    washers: counts.washerRows ? counts.washers : null,
+    dryers: counts.dryerRows ? counts.dryers : null,
+  }));
 }
 
 export function dailyUsage(machines: Machine[], history: MachineSnapshot[], date: Date): UsagePoint[] {
-  const labels = Array.from({ length: 24 }, (_, hour) => `${hour.toString().padStart(2, '0')}:00`);
   const selectedDate = dateKey(date);
-  return recordedUsage(machines, history, labels, poll => dateKey(poll) === selectedDate ? poll.getHours() : -1);
+  return recordedUsage(
+    machines,
+    history,
+    poll => dateKey(poll) === selectedDate,
+    timeLabel,
+  );
 }
 
 export function weeklyUsage(machines: Machine[], history: MachineSnapshot[], dates: Date[]): UsagePoint[] {
-  const selectedDates = dates.map(dateKey);
-  return recordedUsage(machines, history, dates.map(date => days[(date.getDay() + 6) % 7]), poll => selectedDates.indexOf(dateKey(poll)));
+  const selectedDates = new Set(dates.map(dateKey));
+  return recordedUsage(
+    machines,
+    history,
+    poll => selectedDates.has(dateKey(poll)),
+    poll => `${days[(poll.getDay() + 6) % 7]} ${timeLabel(poll)}`,
+  );
 }
