@@ -84,7 +84,11 @@ function weekEnd(dates: Date[]): Date {
 
 export function weeklyChartBounds(dates: Date[]): { start: number; end: number } | null {
   if (dates.length < 7) return null;
-  return { start: dates[0].getTime(), end: weekEnd(dates).getTime() };
+  // Daily peaks sit at each day's midpoint; fit the axis to those points.
+  return {
+    start: (dates[0].getTime() + dates[1].getTime()) / 2,
+    end: (dates[6].getTime() + weekEnd(dates).getTime()) / 2,
+  };
 }
 
 // Estimate observed running time after each poll, stopping at the next observation,

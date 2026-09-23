@@ -91,11 +91,7 @@
     }).join(' ');
   };
   let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
-  let weeklyAxisLabels = $derived(view === -1 && weekBounds ? dates.slice(0, 7).map((date, index) => {
-    const start = date.getTime();
-    const end = index < 6 ? dates[index + 1].getTime() : weekBounds.end;
-    return { label: days[index], timestamp: start + (end - start) / 2 };
-  }) : []);
+  let weeklyAxisLabels = $derived(view === -1 ? points : []);
   let title = $derived(view === -1 ? 'Last full week' : `${dayNames[view]}, ${formatDate(dates[view])}`);
   let dataKey = $derived(points.map(point => `${point.timestamp}:${point.washers ?? 'x'}:${point.dryers ?? 'x'}`).join('|'));
   let selected = $derived(points[Math.min(hoverIndex, points.length - 1)] ?? emptyPoint);
