@@ -197,12 +197,14 @@
     <h2 id="usage-title">Usage</h2>
     <div class="range" role="tablist" tabindex="-1" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}
       onpointerleave={() => { if (!dragMoved) dragState = null; }}>
-      <span class="range-thumb" class:direct={!thumbAnimated} style:--usage-pill-width={`${thumb?.width ?? 0}px`} style:--usage-pill-height={`${thumb?.height ?? 0}px`}
-        style:--usage-pill-center={`${thumbOffset ?? thumb?.center ?? 0}px`} aria-hidden="true">
-        {#each ['Week', ...days] as label, index}
-          <span style:left={`${tabBounds[index]?.center ?? 0}px`}>{label}</span>
-        {/each}
-      </span>
+      {#if thumb}
+        <span class="range-thumb" class:direct={!thumbAnimated} style:--usage-pill-width={`${thumb.width}px`} style:--usage-pill-height={`${thumb.height}px`}
+          style:--usage-pill-center={`${thumbOffset ?? thumb.center}px`} aria-hidden="true">
+          {#each ['Week', ...days] as label, index}
+            <span style:left={`${tabBounds[index]?.center ?? 0}px`}>{label}</span>
+          {/each}
+        </span>
+      {/if}
       {#each ['Week', ...days] as label, index}
         <button id={`period-${index}`} role="tab" aria-selected={view === index - 1} aria-controls="usage-panel" tabindex={view === index - 1 ? 0 : -1}
           onclick={(event) => { if (event.detail === 0 || !dragMoved) select(index - 1, false, event.detail !== 0); dragMoved = false; }}
