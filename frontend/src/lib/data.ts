@@ -192,7 +192,7 @@ export function summary(machines: Machine[], type: MachineType) {
   const active = typed.filter(machine => machine.status === 'Running' && !machine.estimatedComplete && machine.minutesLeft !== null);
   return {
     total: typed.length,
-    available: typed.filter(machine => machine.status === 'Available' || machine.status === 'Completed').length,
+    available: typed.filter(machine => machine.status === 'Available' || machine.status === 'Completed' || machine.estimatedComplete).length,
     next: active.sort((a, b) => a.minutesLeft! - b.minutesLeft!).at(0),
   };
 }
