@@ -121,7 +121,8 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   const dates = lastFullWeek(now);
   const url = new URL('/v1/dashboard', apiBase);
   url.searchParams.set('start', dates[0].toISOString());
-  url.searchParams.set('end', weekEnd(dates).toISOString());
+  // The API end is exclusive; include next Monday's midnight for Sunday's 24:00.
+  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + 1).toISOString());
   const payload = await requestJson(url) as DashboardResponse;
   if (!payload || !Array.isArray(payload.machines) || !Array.isArray(payload.history)
     || !payload.machines.every(isRecord) || !payload.history.every(isRecord)
@@ -262,36 +263,33 @@ function recordedUsage(
 
 export function dailyUsage(machines: Machine[], history: MachineSnapshot[], date: Date): UsagePoint[] {
   const selectedDate = dateKey(date);
+  const nextMidnight = new Date(date);
+  nextMidnight.setHours(0, 0, 0, 0);
+  nextMidnight.setDate(nextMidnight.getDate() + 1);
+  const end = nextMidnight.getTime();
   return recordedUsage(
     machines,
     history,
-    poll => dateKey(poll) === selectedDate,
-    timeLabel,
+    poll => dateKey(poll) === selectedDate || poll.getTime() === end,
+    poll => poll.getTime() === end ? '24:00' : timeLabel(poll),
   );
 }
 
 export function weeklyUsage(machines: Machine[], history: MachineSnapshot[], dates: Date[]): UsagePoint[] {
-  const selectedDates = new Set(dates.map(dateKey));
-  const peaks = new Map<string, { washers: number | null; dryers: number | null }>();
-  const polls = recordedUsage(
-    machines,
-    history,
-    poll => selectedDates.has(dateKey(poll)),
-    dateKey,
-  );
-  for (const poll of polls) {
-    const peak = peaks.get(poll.label) ?? { washers: null, dryers: null };
-    if (poll.washers !== null) peak.washers = Math.max(peak.washers ?? 0, poll.washers);
-    if (poll.dryers !== null) peak.dryers = Math.max(peak.dryers ?? 0, poll.dryers);
-    peaks.set(poll.label, peak);
-  }
   return dates.map(date => {
+    // Use the same inclusive midnight endpoint as the daily chart.
+    const polls = dailyUsage(machines, history, date);
+    const peak: { washers: number | null; dryers: number | null } = { washers: null, dryers: null };
+    for (const poll of polls) {
+      if (poll.washers !== null) peak.washers = Math.max(peak.washers ?? 0, poll.washers);
+      if (poll.dryers !== null) peak.dryers = Math.max(peak.dryers ?? 0, poll.dryers);
+    }
     const nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
     return {
       label: days[(date.getDay() + 6) % 7],
       timestamp: (date.getTime() + nextDay.getTime()) / 2,
-      ...(peaks.get(dateKey(date)) ?? { washers: null, dryers: null }),
+      ...peak,
     };
   });
 }
