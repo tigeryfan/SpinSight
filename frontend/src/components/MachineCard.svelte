@@ -50,9 +50,9 @@
   .dorm { padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 65%, transparent); color: var(--ink); font-size: 11px; font-weight: 400; white-space: nowrap; }
   .status { font-size: 12px; color: var(--muted); text-align: right; }
   .running .status { color: var(--ink); font-weight: 500; }
-  .machine-details { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease, visibility .15s; position: absolute; bottom: calc(100% - 1px); right: 0; padding: 10px 12px; min-width: 216px; border-radius: var(--radius-control); background: var(--ink); color: var(--panel); box-shadow: var(--popover-shadow); font-size: 12px; z-index: 5; }
+  .machine-details { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease, visibility .15s; position: absolute; bottom: calc(100% - 1px); right: 0; padding: 10px 12px; min-width: 216px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); color: var(--ink); box-shadow: var(--popover-shadow); font-size: 12px; z-index: 5; }
   .machine:not(.dismissed):hover .machine-details, .machine:not(.dismissed):focus-within .machine-details { visibility: visible; opacity: 1; transform: translateY(0); }
-  .expanded .machine-details { visibility: visible; opacity: 1; transform: none; transition: none; position: relative; bottom: auto; padding: 0 16px 12px; background: transparent; color: var(--ink); box-shadow: none; min-width: 0; }
+  .expanded .machine-details { visibility: visible; opacity: 1; transform: none; transition: none; position: relative; bottom: auto; padding: 0 16px 12px; border: 0; background: transparent; color: var(--ink); box-shadow: none; min-width: 0; }
   dl { margin: 0; }
   dl div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
   dt { opacity: .8; }
