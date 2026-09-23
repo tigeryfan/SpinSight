@@ -176,7 +176,7 @@ export function deriveMachines(machines: Machine[], now: number): Machine[] {
       ...machine,
       estimatedCompletionTime: eta === null ? null : machine.estimatedCompletionTime,
       minutesLeft: running ? Math.max(0, Math.ceil((eta - now) / minute)) : null,
-      estimatedComplete: running && now >= eta,
+      estimatedComplete: running && now - eta > minute,
       // The upstream data has no cycle start. Show only time elapsed since its poll.
       progress: running && poll !== null && eta > poll ? Math.min(1, Math.max(0, (now - poll) / (eta - poll))) : null,
     };
@@ -192,7 +192,7 @@ export function summary(machines: Machine[], type: MachineType) {
   const active = typed.filter(machine => machine.status === 'Running' && !machine.estimatedComplete && machine.minutesLeft !== null);
   return {
     total: typed.length,
-    available: typed.filter(machine => machine.status === 'Available' || machine.status === 'Completed' || machine.estimatedComplete).length,
+    available: typed.filter(machine => machine.status === 'Available' || machine.status === 'Completed').length,
     next: active.sort((a, b) => a.minutesLeft! - b.minutesLeft!).at(0),
   };
 }

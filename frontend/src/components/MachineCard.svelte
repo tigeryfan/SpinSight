@@ -6,9 +6,9 @@
   let progressRatio = $derived(Math.min(1, Math.max(0, machine.progress ?? (machine.status === 'Completed' || machine.estimatedComplete ? 1 : 0))));
   let percentage = $derived(Math.round(progressRatio * 100));
   let progressWidth = $derived(`${progressRatio * 100}%`);
-  let status = $derived(machine.estimatedComplete ? 'Estimated complete' : machine.status === 'Running'
+  let status = $derived(machine.estimatedComplete ? 'Waiting unload' : machine.status === 'Running'
     ? machine.minutesLeft === null ? 'Running · time unknown' : `${machine.minutesLeft}m left`
-    : machine.status === 'Completed' ? 'Awaiting unload' : machine.status);
+    : machine.status === 'Completed' ? 'Available' : machine.status);
 </script>
 
 <div class="machine" class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running' && !machine.estimatedComplete} class:completed={machine.status === 'Completed' || machine.estimatedComplete} class:expanded class:dismissed>
