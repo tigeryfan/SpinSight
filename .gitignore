@@ -71,3 +71,6 @@ coverage/
 # OS temp
 .tmp/
 tmp/
+
+# Local handoff notes
+/HANDOFF.md
