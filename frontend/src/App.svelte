@@ -21,6 +21,8 @@
   let snapshot = $state<Snapshot | null>(null);
   let dataRevision = $state(0);
   let loading = $state(true);
+  let refreshSpinning = $state(false);
+  let refreshIcon: HTMLSpanElement;
   let error = $state('');
   let announcement = $state('Loading machines.');
   let now = $state(Date.now());
@@ -31,6 +33,10 @@
   let filtered = $derived(deriveMachines(storedMachines, now));
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
+
+  function startRefreshSpin() {
+    if (!refreshSpinning && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) refreshSpinning = true;
+  }
 
   async function readData(scrape = false) {
     if (requestPending) return;
@@ -57,6 +63,8 @@
     try { localStorage.setItem('spinsight-theme', theme); } catch { /* Keep the session preference when storage is blocked. */ }
   }
   onMount(() => {
+    const stopRefreshSpin = () => refreshSpinning = false;
+    refreshIcon.addEventListener('animationcancel', stopRefreshSpin);
     try {
       const saved = localStorage.getItem('spinsight-theme');
       if (themes.includes(saved as Theme)) theme = saved as Theme;
@@ -68,6 +76,7 @@
     return () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', updateClock);
+      refreshIcon.removeEventListener('animationcancel', stopRefreshSpin);
     };
   });
 </script>
@@ -82,8 +91,9 @@
     </div>
     <div class="controls">
       <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
-        onclick={() => readData(true)}>
-        <span class="refresh-icon"><Icon name="refresh" /></span>
+        onpointerdown={(event) => { if (event.button === 0) startRefreshSpin(); }}
+        onclick={(event) => { if (event.detail === 0) startRefreshSpin(); void readData(true); }}>
+        <span class="refresh-icon" bind:this={refreshIcon} class:spinning={refreshSpinning} onanimationend={() => refreshSpinning = false}><Icon name="refresh" /></span>
       </button>
       <button class="pill theme-button" aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
         <span class="theme-content" aria-hidden="true">
