@@ -255,10 +255,26 @@ export function dailyUsage(machines: Machine[], history: MachineSnapshot[], date
 
 export function weeklyUsage(machines: Machine[], history: MachineSnapshot[], dates: Date[]): UsagePoint[] {
   const selectedDates = new Set(dates.map(dateKey));
-  return recordedUsage(
+  const peaks = new Map<string, { washers: number | null; dryers: number | null }>();
+  const polls = recordedUsage(
     machines,
     history,
     poll => selectedDates.has(dateKey(poll)),
-    poll => `${days[(poll.getDay() + 6) % 7]} ${timeLabel(poll)}`,
+    dateKey,
   );
+  for (const poll of polls) {
+    const peak = peaks.get(poll.label) ?? { washers: null, dryers: null };
+    if (poll.washers !== null) peak.washers = Math.max(peak.washers ?? 0, poll.washers);
+    if (poll.dryers !== null) peak.dryers = Math.max(peak.dryers ?? 0, poll.dryers);
+    peaks.set(poll.label, peak);
+  }
+  return dates.map(date => {
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return {
+      label: days[(date.getDay() + 6) % 7],
+      timestamp: (date.getTime() + nextDay.getTime()) / 2,
+      ...(peaks.get(dateKey(date)) ?? { washers: null, dryers: null }),
+    };
+  });
 }

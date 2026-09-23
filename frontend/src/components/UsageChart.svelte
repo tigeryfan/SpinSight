@@ -217,7 +217,7 @@
   </div>
   <div id="usage-panel" role="tabpanel" aria-labelledby={`period-${view + 1}`}>
     <div class="chart-wrap" bind:clientWidth={width}>
-      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}: washers and dryers in use. Use the chart slider to explore values.`}>
+      <svg viewBox={`0 0 ${chartWidth} ${height}`} role="img" aria-label={`${title}: ${view === -1 ? 'daily peak washers and dryers' : 'washers and dryers'} in use. Use the chart slider to explore values.`}>
         <defs>
           <linearGradient id="wash-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--wash)" stop-opacity=".18" /><stop offset="1" stop-color="var(--wash)" stop-opacity="0" /></linearGradient>
           <linearGradient id="dry-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--dry)" stop-opacity=".14" /><stop offset="1" stop-color="var(--dry)" stop-opacity="0" /></linearGradient>
@@ -274,7 +274,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])} · Each point is one database poll.{#if hasGaps} Gaps have no readings.{/if}</p>
+  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])} · {view === -1 ? 'Daily peak of recorded running counts.' : 'Each point is one database poll.'}{hasGaps ? ' Gaps mean no readings were available.' : ''}</p>
 </section>
 
 <style>
