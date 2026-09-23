@@ -50,9 +50,9 @@
       if (dorm !== 'All Dorms' && !snapshot.machines.some(machine => machine.dorm === dorm)) dorm = 'All Dorms';
       announcement = snapshot.refreshedAt
         ? `Data last updated ${snapshot.refreshedAt.toLocaleString()}.`
-        : 'No machine readings have been stored yet.';
+        : 'No machine readings are available yet.';
     } catch {
-      error = scrape ? 'Could not refresh the machines. Please try again.' : 'Could not load the stored data. Please try again.';
+      error = scrape ? 'Could not refresh the machines. Please try again.' : 'Could not load machine data. Please try again.';
       announcement = '';
     } finally { loading = false; requestPending = false; }
   }
