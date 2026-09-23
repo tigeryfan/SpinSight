@@ -52,8 +52,8 @@ button, a, input { touch-action: manipulation; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .controls { display: flex; gap: 8px; align-items: center; }
-.pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); color: var(--ink); font-size: 13px; white-space: nowrap; }
-.pill:hover:not(:disabled) { border-color: var(--muted); }
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--radius-control); background: var(--panel); color: var(--ink); font-size: 13px; white-space: nowrap; }
+.pill:hover:not(:disabled) { border-color: transparent; }
 .icon-pill { width: 38px; padding: 0; }
 .theme-button { width: 86px; }
 .theme-content { display: grid; width: 100%; }
@@ -61,12 +61,12 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .brand { display: grid; gap: 4px; }
 .update-note { font-size: 11px; color: var(--muted); }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.stat { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 12px 16px; }
+.stat { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid transparent; border-radius: var(--radius-panel); padding: 12px 16px; }
 .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .stat .value { font-size: 22px; font-weight: 600; margin-top: auto; white-space: nowrap; }
 .stat .all-available { white-space: normal; }
 .stat .sub { font-size: 13px; color: var(--muted); font-weight: 500; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: var(--panel-padding); margin-bottom: 16px; }
+.panel { background: var(--panel); border: 1px solid transparent; border-radius: var(--radius-panel); padding: var(--panel-padding); margin-bottom: 16px; }
 .machines-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
 .machine-count { font-size: 11px; color: var(--muted); white-space: nowrap; }

@@ -308,7 +308,7 @@
   .direct .hover-line, .direct .hover-dot, .chart-tooltip.direct { transition: none; }
   .chart-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: crosshair; }
   .chart-wrap:has(.chart-input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-  .chart-tooltip { position: absolute; top: 0; left: 0; width: 154px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: var(--popover-shadow); font-size: 12px; pointer-events: none; opacity: 0; transition: transform .14s cubic-bezier(.16, 1, .3, 1), opacity .12s ease-out; }
+  .chart-tooltip { position: absolute; top: 0; left: 0; width: 154px; padding: 10px 12px; background: var(--panel); border: 1px solid transparent; border-radius: var(--radius-control); box-shadow: var(--popover-shadow); font-size: 12px; pointer-events: none; opacity: 0; transition: transform .14s cubic-bezier(.16, 1, .3, 1), opacity .12s ease-out; }
   .chart-tooltip.visible { opacity: 1; }
   .chart-tooltip strong { display: block; margin-bottom: 6px; }
   .chart-tooltip span { display: flex; align-items: center; gap: 7px; color: var(--muted); padding: 2px 0; }

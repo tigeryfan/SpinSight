@@ -69,7 +69,7 @@
   .dorm-picker { position: relative; }
   .chevron { display: inline-flex; transition: transform 160ms cubic-bezier(.215, .61, .355, 1); }
   .chevron.flipped { transform: rotate(180deg); }
-  .dorm-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 190px; padding: var(--control-inset); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-control); box-shadow: var(--popover-shadow); }
+  .dorm-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 190px; padding: var(--control-inset); background: var(--panel); border: 1px solid transparent; border-radius: var(--radius-control); box-shadow: var(--popover-shadow); }
   .dorm-menu button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 10px; border: 0; border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); background: transparent; color: var(--ink); text-align: left; }
   .dorm-menu button:hover { background: var(--bg); }
   .dorm-menu button[aria-checked='true'] { background: var(--selected); color: var(--selected-ink); }
