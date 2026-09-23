@@ -3,7 +3,8 @@
   let { machine, ranking, showDorm, animationKey }: { machine: Machine; ranking: { rank: number; total: number } | null; showDorm: boolean; animationKey: number } = $props();
   let expanded = $state(false);
   let dismissed = $state(false);
-  let progressRatio = $derived(Math.min(1, Math.max(0, machine.progress ?? (machine.status === 'Completed' || machine.estimatedComplete ? 1 : 0))));
+  let progressRatio = $derived(machine.status === 'Available' || machine.status === 'Completed'
+    ? 0 : Math.min(1, Math.max(0, machine.progress ?? (machine.estimatedComplete ? 1 : 0))));
   let percentage = $derived(Math.round(progressRatio * 100));
   let progressWidth = $derived(`${progressRatio * 100}%`);
   let status = $derived(machine.estimatedComplete ? 'Waiting unload' : machine.status === 'Running'
