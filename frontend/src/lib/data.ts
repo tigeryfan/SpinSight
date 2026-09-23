@@ -208,6 +208,23 @@ const timeLabel = (date: Date) => date.toLocaleTimeString(undefined, {
   hour: '2-digit', minute: '2-digit', hour12: false,
 });
 
+export function dailyChartAxis(date: Date, plotWidth: number) {
+  const midnight = new Date(date);
+  midnight.setHours(0, 0, 0, 0);
+  const nextMidnight = new Date(midnight);
+  nextMidnight.setDate(nextMidnight.getDate() + 1);
+  const start = midnight.getTime();
+  const end = nextMidnight.getTime();
+  // Keep time labels at least 72px apart, independently of when readings arrived.
+  const minimumStep = (end - start) / minute * 72 / plotWidth;
+  const step = ([30, 60, 120, 180, 240, 360, 480, 720, 1440].find(interval => interval >= minimumStep) ?? 1440) * minute;
+  const ticks = Array.from({ length: Math.floor((end - start) / step) + 1 }, (_, index) => {
+    const timestamp = start + index * step;
+    return { timestamp, label: timestamp === end ? '24:00' : timeLabel(new Date(timestamp)) };
+  });
+  return { start, end, ticks };
+}
+
 // Count running machines at every timestamp stored in the database. A type with no
 // rows at a timestamp stays null; zero means that type was observed without running machines.
 function recordedUsage(

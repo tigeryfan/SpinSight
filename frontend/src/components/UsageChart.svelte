@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
-  import { dailyUsage, weeklyUsage, weeklyChartBounds, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
+  import { dailyUsage, dailyChartAxis, weeklyUsage, weeklyChartBounds, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
   let { machines, history, dates, animationKey }: { machines: Machine[]; history: Snapshot['history']; dates: Date[]; animationKey: number } = $props();
   let view = $state(-1);
   let width = $state(700);
@@ -54,8 +54,9 @@
   const top = 16;
   const bottom = 226;
   let plotWidth = $derived(chartWidth - left - 16);
-  let firstTimestamp = $derived(view === -1 ? weekBounds?.start ?? points[0]?.timestamp ?? 0 : points[0]?.timestamp ?? 0);
-  let lastTimestamp = $derived(view === -1 ? weekBounds?.end ?? points.at(-1)?.timestamp ?? firstTimestamp : points.at(-1)?.timestamp ?? firstTimestamp);
+  let dayAxis = $derived(view === -1 ? null : dailyChartAxis(dates[view], plotWidth));
+  let firstTimestamp = $derived((dayAxis ?? weekBounds)?.start ?? 0);
+  let lastTimestamp = $derived((dayAxis ?? weekBounds)?.end ?? firstTimestamp);
   let timeSpan = $derived(Math.max(0, lastTimestamp - firstTimestamp));
   const xAt = (timestamp: number) => {
     if (timeSpan === 0) return left + plotWidth / 2;
@@ -90,7 +91,6 @@
     }).join(' ');
   };
   let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
-  let xLabelStep = $derived(Math.max(1, Math.ceil(points.length / (view === -1 ? 8 : width < 450 ? 6 : 10))));
   let weeklyAxisLabels = $derived(view === -1 && weekBounds ? dates.slice(0, 7).map((date, index) => {
     const start = date.getTime();
     const end = index < 6 ? dates[index + 1].getTime() : weekBounds.end;
@@ -245,10 +245,8 @@
             <text class="axis" x={xAt(tick.timestamp)} y={height - 9} text-anchor={index === 0 ? 'start' : index === weeklyAxisLabels.length - 1 ? 'end' : 'middle'}>{tick.label}</text>
           {/each}
         {:else}
-          {#each points as point, index}
-            {#if index === 0 || index === points.length - 1 || index % xLabelStep === 0}
-              <text class="axis" x={x(index)} y={height - 9} text-anchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}>{point.label}</text>
-            {/if}
+          {#each dayAxis?.ticks ?? [] as tick}
+            <text class="axis" x={xAt(tick.timestamp)} y={height - 9} text-anchor="middle">{tick.label}</text>
           {/each}
         {/if}
         <g class="hover-overlay" class:visible={active !== null && (selected.washers !== null || selected.dryers !== null)} class:direct={active !== null && !glide} aria-hidden="true">
@@ -274,7 +272,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])} · {view === -1 ? 'Daily peak of recorded running counts.' : 'Each point is one database poll.'}{hasGaps ? ' Gaps mean no readings were available.' : ''}</p>
+  <p class="history-note">{formatDate(dates[0])}–{formatDate(dates[6])}{#if view === -1} · Daily peak of recorded running counts.{/if}{#if hasGaps} · Gaps mean no readings were available.{/if}</p>
 </section>
 
 <style>
