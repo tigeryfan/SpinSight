@@ -108,6 +108,7 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
   .tour-invite { align-items: stretch; flex-direction: column; padding: 14px; }
   .tour-invite-actions { justify-content: flex-end; }
 }
+@media (max-width: 417px) { .update-label { display: none; } }
 @media (pointer: coarse) { .pill { min-height: 44px; } .icon-pill { width: 44px; } }
 @media (prefers-reduced-motion: reduce) {
   :root { transition: none; }
