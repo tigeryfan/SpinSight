@@ -125,8 +125,8 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   const dates = lastFullWeek(now);
   const url = new URL('/v1/dashboard', apiBase);
   url.searchParams.set('start', dates[0].toISOString());
-  // The API end is exclusive; include next Monday's midnight for Sunday's 24:00.
-  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + 1).toISOString());
+  // Include next Monday's first reading before 00:15 for Sunday's 24:00.
+  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + 15 * minute).toISOString());
   const payload = await requestJson(url) as DashboardResponse;
   if (!payload || !Array.isArray(payload.machines) || !Array.isArray(payload.history)
     || !payload.machines.every(isRecord) || !payload.history.every(isRecord)
@@ -285,12 +285,19 @@ export function dailyUsage(machines: Machine[], history: MachineSnapshot[], date
   nextMidnight.setHours(0, 0, 0, 0);
   nextMidnight.setDate(nextMidnight.getDate() + 1);
   const end = nextMidnight.getTime();
+  let firstNextDayPoll = Infinity;
+  for (const row of history) {
+    const time = timestamp(row.poll_time);
+    if (time !== null && time >= end && time < end + 15 * minute) {
+      firstNextDayPoll = Math.min(firstNextDayPoll, time);
+    }
+  }
   return recordedUsage(
     machines,
     history,
-    poll => dateKey(poll) === selectedDate || poll.getTime() === end,
-    poll => poll.getTime() === end ? '24:00' : timeLabel(poll),
-  );
+    poll => dateKey(poll) === selectedDate || poll.getTime() === firstNextDayPoll,
+    poll => poll.getTime() === firstNextDayPoll ? '24:00' : timeLabel(poll),
+  ).map(point => point.timestamp === firstNextDayPoll ? { ...point, timestamp: end } : point);
 }
 
 export function weeklyUsage(machines: Machine[], history: MachineSnapshot[], dates: Date[]): UsagePoint[] {
