@@ -7,4 +7,7 @@ export interface Env {
   GREENWALD_COOKIE: string;
   /** User-Agent string for Greenwald requests */
   GREENWALD_UA: string;
+  TURNSTILE_BACKGROUND_SECRET: string;
+  TURNSTILE_CHALLENGE_SECRET: string;
+  TURNSTILE_HOSTNAMES: string;
 }

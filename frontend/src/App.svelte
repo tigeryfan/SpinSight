@@ -6,8 +6,10 @@
   import Icon from './components/Icon.svelte';
   import MachineCard from './components/MachineCard.svelte';
   import TourCard from './components/TourCard.svelte';
+  import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
-  import { deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
+  import { ChallengeRequiredError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
+  import { loadTurnstile, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
 
   type Theme = 'light' | 'dark' | 'system';
@@ -25,12 +27,17 @@
   let dataRevision = $state(0);
   let loading = $state(true);
   let refreshSpinning = $state(false);
-  let refreshIcon: HTMLSpanElement;
   let error = $state('');
   let announcement = $state('Loading machines.');
   let now = $state(Date.now());
   let requestPending = false;
   let retryRefresh = false;
+  let challengeVisible = $state(false);
+  let backgroundToken: string | null = null;
+  let backgroundWaiters: Array<(token: string | null) => void> = [];
+  let backgroundApi: TurnstileApi | null = null;
+  let backgroundWidgetId: string | null = null;
+  let backgroundContainer: HTMLDivElement;
   let dormReady = $state(false);
   let requestedDorm: string | null = null;
   let savedDorm: string | null = null;
@@ -44,27 +51,95 @@
     if (!refreshSpinning && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) refreshSpinning = true;
   }
 
-  async function readData(scrape = false) {
+  function receiveBackgroundToken(token: string | null) {
+    backgroundToken = token;
+    for (const resolve of backgroundWaiters.splice(0)) resolve(token);
+  }
+  async function prepareBackgroundCheck() {
+    const sitekey = import.meta.env.VITE_TURNSTILE_BACKGROUND_SITE_KEY;
+    if (!sitekey) return;
+    try {
+      backgroundApi = await loadTurnstile();
+      backgroundWidgetId = backgroundApi.render(backgroundContainer, {
+        sitekey,
+        action: 'refresh_background',
+        callback: token => receiveBackgroundToken(token),
+        'error-callback': () => receiveBackgroundToken(null),
+        'expired-callback': () => { receiveBackgroundToken(null); if (backgroundApi && backgroundWidgetId) backgroundApi.reset(backgroundWidgetId); },
+      });
+    } catch { receiveBackgroundToken(null); }
+  }
+  async function takeBackgroundToken(): Promise<string | null> {
+    if (!import.meta.env.VITE_TURNSTILE_BACKGROUND_SITE_KEY) return null;
+    if (backgroundToken) { const token = backgroundToken; backgroundToken = null; return token; }
+    return new Promise(resolve => {
+      const timer = window.setTimeout(() => { backgroundWaiters = backgroundWaiters.filter(waiter => waiter !== done); resolve(null); }, 10_000);
+      const done = (token: string | null) => { window.clearTimeout(timer); backgroundToken = null; resolve(token); };
+      backgroundWaiters.push(done);
+    });
+  }
+  function resetBackgroundCheck() {
+    backgroundToken = null;
+    if (backgroundApi && backgroundWidgetId) backgroundApi.reset(backgroundWidgetId);
+  }
+  function applySnapshot(next: Snapshot) {
+    snapshot = next;
+    dataRevision += 1;
+    now = Date.now();
+    const availableDorms = [...new Set(snapshot.machines.map(machine => machine.dorm))];
+    if (!dormReady && availableDorms.length) {
+      dorm = selectDorm(availableDorms, requestedDorm, savedDorm);
+      dormReady = true;
+    } else if (dormReady && availableDorms.length && dorm !== 'All Dorms' && !availableDorms.includes(dorm)) dorm = 'All Dorms';
+    announcement = snapshot.refreshedAt
+      ? `Data last updated ${snapshot.refreshedAt.toLocaleString()}.`
+      : 'No machine readings are available yet.';
+  }
+  async function readData() {
     if (requestPending) return;
     requestPending = true;
-    retryRefresh = scrape;
+    retryRefresh = false;
     loading = true; error = '';
     try {
-      snapshot = await (scrape ? refreshSnapshot() : loadSnapshot());
-      dataRevision += 1;
-      now = Date.now();
-      const availableDorms = [...new Set(snapshot.machines.map(machine => machine.dorm))];
-      if (!dormReady && availableDorms.length) {
-        dorm = selectDorm(availableDorms, requestedDorm, savedDorm);
-        dormReady = true;
-      } else if (dormReady && availableDorms.length && dorm !== 'All Dorms' && !availableDorms.includes(dorm)) dorm = 'All Dorms';
-      announcement = snapshot.refreshedAt
-        ? `Data last updated ${snapshot.refreshedAt.toLocaleString()}.`
-        : 'No machine readings are available yet.';
+      applySnapshot(await loadSnapshot());
     } catch {
-      error = scrape ? 'Could not refresh the machines. Please try again.' : 'Could not load machine data. Please try again.';
+      error = 'Could not load machine data. Please try again.';
       announcement = '';
     } finally { loading = false; requestPending = false; }
+  }
+  function finishRefresh() { loading = false; requestPending = false; refreshSpinning = false; }
+  async function refreshDashboard() {
+    if (requestPending) return;
+    requestPending = true;
+    retryRefresh = true;
+    loading = true; error = '';
+    startRefreshSpin();
+    const token = await takeBackgroundToken();
+    resetBackgroundCheck();
+    if (!token) { challengeVisible = true; return; }
+    try {
+      applySnapshot(await refreshSnapshot(token, 'background'));
+      finishRefresh();
+    } catch (cause) {
+      if (cause instanceof ChallengeRequiredError) { challengeVisible = true; return; }
+      error = 'Could not refresh the machines. Please try again.';
+      finishRefresh();
+    }
+  }
+  async function completeChallenge(token: string): Promise<boolean> {
+    requestPending = true;
+    loading = true;
+    error = '';
+    startRefreshSpin();
+    try {
+      applySnapshot(await refreshSnapshot(token, 'challenge'));
+      challengeVisible = false;
+      finishRefresh();
+      return true;
+    } catch {
+      finishRefresh();
+      return false;
+    }
   }
   function cycleTheme() {
     theme = themes[(themes.indexOf(theme) + 1) % themes.length];
@@ -95,8 +170,6 @@
     else void showTourStep(tourStep + 1);
   }
   onMount(() => {
-    const stopRefreshSpin = () => refreshSpinning = false;
-    refreshIcon.addEventListener('animationcancel', stopRefreshSpin);
     let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
     if (!savedTheme) {
       try { savedTheme = localStorage.getItem('spinsight-theme'); }
@@ -113,10 +186,11 @@
     const timer = window.setInterval(updateClock, 1000);
     document.addEventListener('visibilitychange', updateClock);
     void readData();
+    void prepareBackgroundCheck();
     return () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', updateClock);
-      refreshIcon.removeEventListener('animationcancel', stopRefreshSpin);
+      if (backgroundApi && backgroundWidgetId) backgroundApi.remove(backgroundWidgetId);
     };
   });
 </script>
@@ -138,10 +212,9 @@
       </div>
     </div>
     <div class="controls">
-      <button class="pill icon-pill" class:tour-target={tourStep === 0} aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
-        onpointerdown={(event) => { if (event.button === 0) startRefreshSpin(); }}
-        onclick={(event) => { if (event.detail === 0) startRefreshSpin(); void readData(true); }}>
-        <span class="refresh-icon" bind:this={refreshIcon} class:spinning={refreshSpinning} onanimationend={() => refreshSpinning = false}><Icon name="refresh" /></span>
+      <button class="pill icon-pill" class:tour-target={tourStep === 0} aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading || challengeVisible}
+        onclick={() => { void refreshDashboard(); }}>
+        <span class="refresh-icon" class:spinning={refreshSpinning}><Icon name="refresh" /></span>
       </button>
       <button class="pill theme-button" class:tour-target={tourStep === 1} aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
         <span class="theme-content" aria-hidden="true">
@@ -157,6 +230,8 @@
       }} /></div>
     </div>
   </header>
+  <div class="background-verification" bind:this={backgroundContainer}></div>
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} failed={finishRefresh} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
@@ -166,7 +241,7 @@
     <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
   <p class="sr-only" role="status">{announcement}</p>
-  {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => readData(retryRefresh)}>Try again</button></div>{/if}
+  {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
     {#each [{ label: 'Washers available', data: washers }, { label: 'Dryers available', data: dryers }] as item}
       <div class="stat"><div class="label">{item.label}</div><div class="value">{snapshot ? item.data.available : '—'} <span class="sub">/ {snapshot ? item.data.total : '—'}</span></div></div>

@@ -51,7 +51,7 @@ function timestamp(value: string | null): number | null {
 }
 
 async function requestJson(url: URL): Promise<unknown> {
-  const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+  const response = await fetch(url, { method: 'GET', cache: 'no-store', credentials: 'include' });
   if (!response.ok) throw new Error(`Request failed (${response.status}).`);
   return response.json();
 }
@@ -161,8 +161,22 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   };
 }
 
-export async function refreshSnapshot(now?: Date): Promise<Snapshot> {
-  const result = await requestJson(new URL('/v1/scrape', apiBase)) as { ok?: boolean } | null;
+export class ChallengeRequiredError extends Error {}
+
+export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date): Promise<Snapshot> {
+  const response = await fetch(new URL('/v1/scrape', apiBase), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, mode }),
+    cache: 'no-store',
+    credentials: 'include',
+  });
+  if (response.status === 403) {
+    const payload = await response.json() as { error?: { code?: string } };
+    if (payload.error?.code === 'challenge_required') throw new ChallengeRequiredError('Verification required.');
+  }
+  if (!response.ok) throw new Error(`Refresh failed (${response.status}).`);
+  const result = await response.json() as { ok?: boolean } | null;
   if (result?.ok !== true) throw new Error('Refresh did not complete successfully.');
   return loadSnapshot(now);
 }

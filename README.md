@@ -29,9 +29,11 @@ Each snapshot stores a machine's identity, location, status, type, estimated com
 The frontend accesses this data through two endpoints.
 
 - `GET /v1/dashboard` returns the latest saved machine readings and history for the requested `start` and `end` timestamps, covering up to eight days.
-- `GET /v1/scrape` fetches fresh readings from Greenwald and saves them to D1 before returning.
+- `POST /v1/scrape` verifies a Turnstile token, fetches fresh readings from Greenwald, and saves them to D1 before returning.
 
-Opening the dashboard reads stored data. Pressing Refresh calls the scraper endpoint, waits for the database write, and then reloads the dashboard. Greenwald credentials and database access remain in the backend Worker.
+Opening the dashboard reads stored data and starts an invisible Turnstile check. Pressing Refresh calls the scraper endpoint, waits for the database write, and then reloads the dashboard. If background verification fails, a visible Turnstile challenge appears in a card. More than three refresh attempts in a rolling minute for the same browser also require a visible challenge. The Worker assigns each browser a signed cookie to count separately, including when many students share one public IP address. Greenwald credentials and database access remain in the backend Worker.
+
+To enable refresh verification, create two Turnstile widgets for `spinsight.xyz`: one **Invisible** widget for background checks and one **Managed** widget for the visible challenge. Set `VITE_TURNSTILE_BACKGROUND_SITE_KEY` and `VITE_TURNSTILE_CHALLENGE_SITE_KEY` when building the frontend. Set the corresponding Worker secrets `TURNSTILE_BACKGROUND_SECRET` and `TURNSTILE_CHALLENGE_SECRET`, then apply `worker/migrations/0002_refresh_attempts.sql` to the Worker D1 database before deploying the Worker. `TURNSTILE_HOSTNAMES` in `worker/wrangler.toml` lists accepted frontend hostnames; local development needs local hostnames added in its own environment. Invisible Turnstile use also requires a reference to Cloudflare's Turnstile Privacy Addendum in the site's privacy policy.
 
 ## Project structure
 
