@@ -156,7 +156,7 @@
     {/each}
   </section>
   {#if tourStep === 3}<TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(2)} close={closeTour} />{/if}
-  <div class:tour-target={tourStep === 3}>
+  <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
       <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
     {:else}
