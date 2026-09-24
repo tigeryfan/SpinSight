@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { solved, failed }: { solved: (token: string) => Promise<boolean>; failed: () => void } = $props();
+  let { solved }: { solved: (token: string) => Promise<boolean> } = $props();
   let container: HTMLDivElement;
   let message = $state('');
   let api: TurnstileApi | null = null;
@@ -22,10 +22,10 @@
         callback: token => { void solved(token).then(ok => {
           if (!ok && widgetId) { message = 'Verification did not complete. Please try again.'; api?.reset(widgetId); }
         }); },
-        'error-callback': () => { message = 'Verification failed to load. Please try again.'; failed(); },
+        'error-callback': () => { message = 'Verification failed to load. Please try again.'; },
         'expired-callback': () => { if (widgetId) api?.reset(widgetId); },
       });
-    } catch { if (!disposed) { message = 'Verification failed to load. Please try again.'; failed(); } }
+    } catch { if (!disposed) message = 'Verification failed to load. Please try again.'; }
   }
 
   onMount(() => {

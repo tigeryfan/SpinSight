@@ -1,7 +1,3 @@
-export function challengeRequired(attemptsInMinute: number): boolean {
-  return attemptsInMinute > 3;
-}
-
 export async function verifyTurnstile(
   token: string,
   action: 'refresh_background' | 'refresh_challenge',
@@ -27,11 +23,20 @@ export async function verifyTurnstile(
   }
 }
 
-export async function recordRefreshAttempt(db: D1Database, clientKey: string): Promise<number> {
+export async function recordRefreshAttempt(db: D1Database, clientKey: string): Promise<boolean> {
   const now = Date.now();
-  const [, count] = await db.batch([
-    db.prepare('INSERT INTO refresh_attempts (client_key, attempted_at) VALUES (?, ?)').bind(clientKey, now),
-    db.prepare('SELECT COUNT(*) AS count FROM refresh_attempts WHERE client_key = ? AND attempted_at > ?').bind(clientKey, now - 60_000),
-  ]);
-  return Number((count.results[0] as { count?: number } | undefined)?.count ?? 0);
+  const attempt = await db.prepare(`
+    INSERT INTO refresh_attempts (client_key, attempted_at, challenge_required)
+    VALUES (?, ?, CASE WHEN
+      (SELECT COUNT(*) FROM refresh_attempts WHERE client_key = ? AND attempted_at > ?) >= 3
+      OR EXISTS (
+        SELECT 1 FROM refresh_attempts
+        WHERE client_key = ? AND challenge_required = 1 AND attempted_at > ?
+      )
+      THEN 1 ELSE 0 END)
+    RETURNING challenge_required
+  `).bind(clientKey, now, clientKey, now - 60_000, clientKey, now - 180_000)
+    .first<{ challenge_required: number }>();
+  if (!attempt) throw new Error('Could not record refresh attempt.');
+  return attempt.challenge_required === 1;
 }

@@ -1,7 +1,7 @@
 import type { Env } from './env';
 import { RefreshError, runScrape } from './scrape';
 import { readDashboard } from './store';
-import { challengeRequired, recordRefreshAttempt, verifyTurnstile } from './refresh-guard';
+import { recordRefreshAttempt, verifyTurnstile } from './refresh-guard';
 import { clientIdentity } from './client-identity';
 
 function corsHeaders(request: Request, hostnames: string): Headers {
@@ -45,7 +45,7 @@ export default {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     // Let the Worker stay alive until scrape finishes
     ctx.waitUntil(runScrape(env));
-    ctx.waitUntil(env.DB.prepare('DELETE FROM refresh_attempts WHERE attempted_at < ?').bind(Date.now() - 60_000).run());
+    ctx.waitUntil(env.DB.prepare('DELETE FROM refresh_attempts WHERE attempted_at < ?').bind(Date.now() - 180_000).run());
   },
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -79,9 +79,8 @@ export default {
         }
         const clientIp = request.headers.get('CF-Connecting-IP') ?? '';
         const hostnames = env.TURNSTILE_HOSTNAMES.split(',').map(hostname => hostname.trim()).filter(Boolean);
-        if (mode === 'background') {
-          const attempts = await recordRefreshAttempt(env.DB, identity!.key);
-          if (challengeRequired(attempts)) return jsonError(403, 'challenge_required', 'Complete a verification to refresh.', headers);
+        if (mode === 'background' && await recordRefreshAttempt(env.DB, identity!.key)) {
+          return jsonError(403, 'challenge_required', 'Complete a verification to refresh.', headers);
         }
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
         const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);

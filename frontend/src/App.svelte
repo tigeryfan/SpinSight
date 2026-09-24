@@ -122,13 +122,17 @@
     loading = true; error = '';
     startRefreshSpin();
     const token = await takeBackgroundToken();
-    resetBackgroundCheck();
-    if (!token) { challengeVisible = true; return; }
     try {
-      applySnapshot(await refreshSnapshot(token, 'background'));
+      applySnapshot(await refreshSnapshot(token ?? '', 'background'));
+      resetBackgroundCheck();
       finishRefresh();
     } catch (cause) {
-      if (cause instanceof ChallengeRequiredError) { challengeVisible = true; return; }
+      if (!token || cause instanceof ChallengeRequiredError) {
+        stopBackgroundCheck();
+        challengeVisible = true;
+        return;
+      }
+      resetBackgroundCheck();
       error = 'Could not refresh the machines. Please try again.';
       finishRefresh();
     }
@@ -145,7 +149,6 @@
       void prepareBackgroundCheck();
       return true;
     } catch {
-      finishRefresh();
       return false;
     }
   }
@@ -239,7 +242,7 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
-  {#if challengeVisible}<ChallengeCard solved={completeChallenge} failed={finishRefresh} />{/if}
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
