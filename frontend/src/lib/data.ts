@@ -161,7 +161,12 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   };
 }
 
-export class ChallengeRequiredError extends Error {}
+export class ChallengeRequiredError extends Error {
+  constructor(readonly reason: 'rate_limit' | 'verification_failed' | 'unknown') {
+    super('Verification required.');
+  }
+}
+export class VerificationFailedError extends Error {}
 
 export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date): Promise<Snapshot> {
   const response = await fetch(new URL('/v1/scrape', apiBase), {
@@ -172,8 +177,12 @@ export async function refreshSnapshot(token: string, mode: 'background' | 'chall
     credentials: 'include',
   });
   if (response.status === 403) {
-    const payload = await response.json() as { error?: { code?: string } };
-    if (payload.error?.code === 'challenge_required') throw new ChallengeRequiredError('Verification required.');
+    const payload = await response.json() as { error?: { code?: string; reason?: string } };
+    if (payload.error?.code === 'challenge_required') {
+      const reason = payload.error.reason;
+      throw new ChallengeRequiredError(reason === 'rate_limit' || reason === 'verification_failed' ? reason : 'unknown');
+    }
+    if (payload.error?.code === 'verification_failed') throw new VerificationFailedError('Verification failed.');
   }
   if (!response.ok) throw new Error(`Refresh failed (${response.status}).`);
   const result = await response.json() as { ok?: boolean } | null;

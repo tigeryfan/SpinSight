@@ -35,6 +35,8 @@ Opening the dashboard reads stored data and starts a background Turnstile check.
 
 Refresh verification uses one Managed Turnstile widget. Its site key is public in the frontend; its secret belongs in the Worker secret binding `TURNSTILE_SECRET`. Apply the Worker D1 migrations before deploying the Worker. `TURNSTILE_HOSTNAMES` in `worker/wrangler.toml` lists accepted frontend hostnames; local development needs local hostnames added in its own environment. The background widget runs with interaction-only appearance. If Cloudflare requests interaction, the dashboard waits until Refresh is clicked and then displays the widget in a card.
 
+Add `?debug` to the dashboard URL to show browser alerts for background and visible Turnstile results, refresh decisions, and the reason a visible challenge was required. Alerts do not show tokens.
+
 ## Project structure
 
 - `frontend/` contains the Svelte interface, machine cards, and chart calculations.

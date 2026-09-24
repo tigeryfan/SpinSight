@@ -25,8 +25,8 @@ function corsHeaders(request: Request, hostnames: string): Headers {
   return headers;
 }
 
-function jsonError(status: number, code: string, message: string, headers: Headers): Response {
-  return Response.json({ error: { code, message } }, { status, headers });
+function jsonError(status: number, code: string, message: string, headers: Headers, reason?: string): Response {
+  return Response.json({ error: { code, message, ...(reason ? { reason } : {}) } }, { status, headers });
 }
 
 function parseTimestamp(value: string | null): number {
@@ -80,11 +80,11 @@ export default {
         const clientIp = request.headers.get('CF-Connecting-IP') ?? '';
         const hostnames = env.TURNSTILE_HOSTNAMES.split(',').map(hostname => hostname.trim()).filter(Boolean);
         if (mode === 'background' && await recordRefreshAttempt(env.DB, identity!.key)) {
-          return jsonError(403, 'challenge_required', 'Complete a verification to refresh.', headers);
+          return jsonError(403, 'challenge_required', 'Complete a verification to refresh.', headers, 'rate_limit');
         }
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
         const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);
-        if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers);
+        if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers, 'verification_failed');
         const result = await runScrape(env);
         return Response.json({ ok: true, ...result }, { headers });
       }

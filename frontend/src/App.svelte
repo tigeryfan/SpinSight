@@ -8,7 +8,7 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
-  import { ChallengeRequiredError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
+  import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
 
@@ -33,6 +33,7 @@
   let requestPending = false;
   let retryRefresh = false;
   let challengeVisible = $state(false);
+  let debugTurnstile = $state(false);
   let backgroundToken: string | null = null;
   let backgroundWaiters: Array<(token: string | null) => void> = [];
   let backgroundApi: TurnstileApi | null = null;
@@ -49,6 +50,9 @@
 
   function startRefreshSpin() {
     if (!refreshSpinning && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) refreshSpinning = true;
+  }
+  function debugAlert(message: string) {
+    if (debugTurnstile) window.alert(`Turnstile debug\n\n${message}`);
   }
 
   function receiveBackgroundToken(token: string | null) {
@@ -69,18 +73,26 @@
         sitekey: turnstileSitekey,
         action: 'refresh_background',
         appearance: 'interaction-only',
-        callback: token => receiveBackgroundToken(token),
-        'error-callback': stopBackgroundCheck,
-        'before-interactive-callback': stopBackgroundCheck,
-        'expired-callback': () => { receiveBackgroundToken(null); if (backgroundApi && backgroundWidgetId) backgroundApi.reset(backgroundWidgetId); },
+        callback: token => { receiveBackgroundToken(token); debugAlert('Background check passed in the browser. A token is ready for Refresh.'); },
+        'error-callback': () => { stopBackgroundCheck(); debugAlert('Background check failed. Refresh will open the visible challenge card.'); },
+        'before-interactive-callback': () => { stopBackgroundCheck(); debugAlert('Background check needs interaction. Refresh will open the visible challenge card.'); },
+        'expired-callback': () => {
+          receiveBackgroundToken(null);
+          if (backgroundApi && backgroundWidgetId) backgroundApi.reset(backgroundWidgetId);
+          debugAlert('Background token expired. The background check is restarting.');
+        },
       });
-    } catch { receiveBackgroundToken(null); }
+    } catch { receiveBackgroundToken(null); debugAlert('Background check could not load. Refresh will open the visible challenge card.'); }
   }
   async function takeBackgroundToken(): Promise<string | null> {
     if (backgroundToken) { const token = backgroundToken; backgroundToken = null; return token; }
     if (!backgroundWidgetId) return null;
     return new Promise(resolve => {
-      const timer = window.setTimeout(() => { backgroundWaiters = backgroundWaiters.filter(waiter => waiter !== done); resolve(null); }, 10_000);
+      const timer = window.setTimeout(() => {
+        backgroundWaiters = backgroundWaiters.filter(waiter => waiter !== done);
+        resolve(null);
+        debugAlert('Background check did not produce a token within 10 seconds. Refresh will open the visible challenge card.');
+      }, 10_000);
       const done = (token: string | null) => { window.clearTimeout(timer); backgroundToken = null; resolve(token); };
       backgroundWaiters.push(done);
     });
@@ -124,15 +136,22 @@
     const token = await takeBackgroundToken();
     try {
       applySnapshot(await refreshSnapshot(token ?? '', 'background'));
+      debugAlert('Refresh allowed. The Worker verified the background token, and this browser has no active rapid-refresh challenge window. No visible challenge was needed.');
       resetBackgroundCheck();
       finishRefresh();
     } catch (cause) {
       if (!token || cause instanceof ChallengeRequiredError) {
         stopBackgroundCheck();
         challengeVisible = true;
+        debugAlert(!token
+          ? 'Refresh needs the visible challenge because the background check produced no token.'
+          : cause instanceof ChallengeRequiredError && cause.reason === 'rate_limit'
+            ? 'Refresh needs the visible challenge because this browser made more than three refresh clicks in one minute. It stays required until three minutes after the last click.'
+            : 'Refresh needs the visible challenge because the Worker did not accept the background token.');
         return;
       }
       resetBackgroundCheck();
+      debugAlert('Refresh failed after the background token was submitted. The Turnstile server result could not be confirmed.');
       error = 'Could not refresh the machines. Please try again.';
       finishRefresh();
     }
@@ -145,10 +164,14 @@
     try {
       applySnapshot(await refreshSnapshot(token, 'challenge'));
       challengeVisible = false;
+      debugAlert('Visible challenge accepted by the Worker. The refresh completed.');
       finishRefresh();
       void prepareBackgroundCheck();
       return true;
-    } catch {
+    } catch (cause) {
+      debugAlert(cause instanceof VerificationFailedError
+        ? 'Visible challenge token was rejected by the Worker. The card remains open for another try.'
+        : 'Refresh failed after the visible challenge token was submitted. The Turnstile server result could not be confirmed.');
       return false;
     }
   }
@@ -181,6 +204,7 @@
     else void showTourStep(tourStep + 1);
   }
   onMount(() => {
+    debugTurnstile = new URLSearchParams(window.location.search).has('debug');
     let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
     if (!savedTheme) {
       try { savedTheme = localStorage.getItem('spinsight-theme'); }
@@ -242,7 +266,7 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
-  {#if challengeVisible}<ChallengeCard solved={completeChallenge} />{/if}
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>

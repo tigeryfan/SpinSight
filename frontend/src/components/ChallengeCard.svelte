@@ -2,12 +2,15 @@
   import { onMount } from 'svelte';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { solved }: { solved: (token: string) => Promise<boolean> } = $props();
+  let { solved, debug }: { solved: (token: string) => Promise<boolean>; debug: boolean } = $props();
   let container: HTMLDivElement;
   let message = $state('');
   let api: TurnstileApi | null = null;
   let widgetId: string | null = null;
   let disposed = false;
+  function debugAlert(message: string) {
+    if (debug) window.alert(`Turnstile debug\n\n${message}`);
+  }
 
   async function renderWidget() {
     message = '';
@@ -19,13 +22,27 @@
         sitekey: turnstileSitekey,
         action: 'refresh_challenge',
         appearance: 'always',
-        callback: token => { void solved(token).then(ok => {
+        callback: token => {
+          debugAlert('Visible challenge passed in the browser. Sending its token to the Worker.');
+          void solved(token).then(ok => {
           if (!ok && widgetId) { message = 'Verification did not complete. Please try again.'; api?.reset(widgetId); }
-        }); },
-        'error-callback': () => { message = 'Verification failed to load. Please try again.'; },
-        'expired-callback': () => { if (widgetId) api?.reset(widgetId); },
+          });
+        },
+        'error-callback': () => {
+          message = 'Verification failed to load. Please try again.';
+          debugAlert('Visible challenge failed in the browser. The card remains open.');
+        },
+        'expired-callback': () => {
+          if (widgetId) api?.reset(widgetId);
+          debugAlert('Visible challenge token expired. The widget is restarting.');
+        },
       });
-    } catch { if (!disposed) message = 'Verification failed to load. Please try again.'; }
+    } catch {
+      if (!disposed) {
+        message = 'Verification failed to load. Please try again.';
+        debugAlert('Visible challenge could not load. The card remains open.');
+      }
+    }
   }
 
   onMount(() => {
