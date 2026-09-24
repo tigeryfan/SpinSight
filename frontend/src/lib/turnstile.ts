@@ -5,11 +5,15 @@ export interface TurnstileApi {
     callback: (token: string) => void;
     'error-callback': () => void;
     'expired-callback'?: () => void;
+    'before-interactive-callback'?: () => void;
     appearance?: 'always' | 'interaction-only';
   }) => string;
   reset: (widgetId: string) => void;
   remove: (widgetId: string) => void;
 }
+
+// Turnstile site keys are public. The matching secret stays in the Worker.
+export const turnstileSitekey = '0x4AAAAAAFB4fRSkTbCtbYsw';
 
 declare global {
   interface Window { turnstile?: TurnstileApi }

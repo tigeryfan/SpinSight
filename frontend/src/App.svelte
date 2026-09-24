@@ -9,7 +9,7 @@
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
   import { ChallengeRequiredError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
-  import { loadTurnstile, type TurnstileApi } from './lib/turnstile';
+  import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
 
   type Theme = 'light' | 'dark' | 'system';
@@ -55,23 +55,30 @@
     backgroundToken = token;
     for (const resolve of backgroundWaiters.splice(0)) resolve(token);
   }
+  function stopBackgroundCheck() {
+    receiveBackgroundToken(null);
+    if (backgroundApi && backgroundWidgetId) backgroundApi.remove(backgroundWidgetId);
+    backgroundWidgetId = null;
+  }
   async function prepareBackgroundCheck() {
-    const sitekey = import.meta.env.VITE_TURNSTILE_BACKGROUND_SITE_KEY;
-    if (!sitekey) return;
+    if (backgroundWidgetId) return;
     try {
       backgroundApi = await loadTurnstile();
+      if (challengeVisible || backgroundWidgetId) return;
       backgroundWidgetId = backgroundApi.render(backgroundContainer, {
-        sitekey,
+        sitekey: turnstileSitekey,
         action: 'refresh_background',
+        appearance: 'interaction-only',
         callback: token => receiveBackgroundToken(token),
-        'error-callback': () => receiveBackgroundToken(null),
+        'error-callback': stopBackgroundCheck,
+        'before-interactive-callback': stopBackgroundCheck,
         'expired-callback': () => { receiveBackgroundToken(null); if (backgroundApi && backgroundWidgetId) backgroundApi.reset(backgroundWidgetId); },
       });
     } catch { receiveBackgroundToken(null); }
   }
   async function takeBackgroundToken(): Promise<string | null> {
-    if (!import.meta.env.VITE_TURNSTILE_BACKGROUND_SITE_KEY) return null;
     if (backgroundToken) { const token = backgroundToken; backgroundToken = null; return token; }
+    if (!backgroundWidgetId) return null;
     return new Promise(resolve => {
       const timer = window.setTimeout(() => { backgroundWaiters = backgroundWaiters.filter(waiter => waiter !== done); resolve(null); }, 10_000);
       const done = (token: string | null) => { window.clearTimeout(timer); backgroundToken = null; resolve(token); };
@@ -135,6 +142,7 @@
       applySnapshot(await refreshSnapshot(token, 'challenge'));
       challengeVisible = false;
       finishRefresh();
+      void prepareBackgroundCheck();
       return true;
     } catch {
       finishRefresh();

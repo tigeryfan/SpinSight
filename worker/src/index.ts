@@ -61,12 +61,12 @@ export default {
     }
 
     try {
-      const identity = env.TURNSTILE_BACKGROUND_SECRET
-        ? await clientIdentity(request, env.TURNSTILE_BACKGROUND_SECRET)
+      const identity = env.TURNSTILE_SECRET
+        ? await clientIdentity(request, env.TURNSTILE_SECRET)
         : null;
       if (identity?.setCookie) headers.set('Set-Cookie', identity.setCookie);
       if (url.pathname === '/v1/scrape') {
-        if (!env.TURNSTILE_BACKGROUND_SECRET || !env.TURNSTILE_CHALLENGE_SECRET || !env.TURNSTILE_HOSTNAMES) {
+        if (!env.TURNSTILE_SECRET || !env.TURNSTILE_HOSTNAMES) {
           return jsonError(503, 'verification_unavailable', 'Refresh verification is unavailable.', headers);
         }
         let body: { token?: unknown; mode?: unknown };
@@ -83,9 +83,8 @@ export default {
           const attempts = await recordRefreshAttempt(env.DB, identity!.key);
           if (challengeRequired(attempts)) return jsonError(403, 'challenge_required', 'Complete a verification to refresh.', headers);
         }
-        const secret = mode === 'background' ? env.TURNSTILE_BACKGROUND_SECRET : env.TURNSTILE_CHALLENGE_SECRET;
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
-        const verified = await verifyTurnstile(token, action, secret, hostnames, clientIp);
+        const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);
         if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers);
         const result = await runScrape(env);
         return Response.json({ ok: true, ...result }, { headers });
