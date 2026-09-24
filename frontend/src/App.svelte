@@ -73,7 +73,6 @@
     document.querySelector<HTMLElement>('#tour-title')?.focus();
   }
   function startTour() {
-    rememberTour();
     void showTourStep(0);
   }
   function closeTour() {
