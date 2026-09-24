@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import DormPicker from './components/DormPicker.svelte';
   import Icon from './components/Icon.svelte';
   import MachineCard from './components/MachineCard.svelte';
+  import TourCard from './components/TourCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
   import { deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
 
@@ -17,6 +18,7 @@
     });
   }
   let theme = $state<Theme>('system');
+  let tourStep = $state(-2);
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
   let dataRevision = $state(0);
@@ -62,6 +64,26 @@
     else document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('spinsight-theme', theme); } catch { /* Keep the session preference when storage is blocked. */ }
   }
+  function rememberTour() {
+    document.cookie = 'spinsight-tour=seen; Max-Age=31536000; Path=/; SameSite=Lax';
+  }
+  async function showTourStep(step: number) {
+    tourStep = step;
+    await tick();
+    document.querySelector<HTMLElement>('#tour-title')?.focus();
+  }
+  function startTour() {
+    rememberTour();
+    void showTourStep(0);
+  }
+  function closeTour() {
+    rememberTour();
+    tourStep = -2;
+  }
+  function nextTourStep() {
+    if (tourStep === 3) closeTour();
+    else void showTourStep(tourStep + 1);
+  }
   onMount(() => {
     const stopRefreshSpin = () => refreshSpinning = false;
     refreshIcon.addEventListener('animationcancel', stopRefreshSpin);
@@ -69,6 +91,9 @@
       const saved = localStorage.getItem('spinsight-theme');
       if (themes.includes(saved as Theme)) theme = saved as Theme;
     } catch { /* Default to the system theme. */ }
+    const seenTour = document.cookie.split(';').some(cookie => cookie.trim() === 'spinsight-tour=seen');
+    if (new URLSearchParams(window.location.search).has('tour')) startTour();
+    else if (!seenTour) tourStep = -1;
     const updateClock = () => now = Date.now();
     const timer = window.setInterval(updateClock, 1000);
     document.addEventListener('visibilitychange', updateClock);
@@ -98,21 +123,29 @@
       </div>
     </div>
     <div class="controls">
-      <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
+      <button class="pill icon-pill" class:tour-target={tourStep === 0} aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
         onpointerdown={(event) => { if (event.button === 0) startRefreshSpin(); }}
         onclick={(event) => { if (event.detail === 0) startRefreshSpin(); void readData(true); }}>
         <span class="refresh-icon" bind:this={refreshIcon} class:spinning={refreshSpinning} onanimationend={() => refreshSpinning = false}><Icon name="refresh" /></span>
       </button>
-      <button class="pill theme-button" aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
+      <button class="pill theme-button" class:tour-target={tourStep === 1} aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
         <span class="theme-content" aria-hidden="true">
           {#key theme}
             <span class="theme-option" transition:themeFade><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
           {/key}
         </span>
       </button>
-      <DormPicker bind:value={dorm} {dorms} />
+      <div class:tour-target={tourStep === 2}><DormPicker bind:value={dorm} {dorms} /></div>
     </div>
   </header>
+  {#if tourStep === -1}
+    <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
+      <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
+      <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
+    </section>
+  {:else if tourStep >= 0 && tourStep < 3}
+    <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
+  {/if}
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => readData(retryRefresh)}>Try again</button></div>{/if}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
@@ -123,11 +156,14 @@
       <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}{#if item.data.total > 0 && item.data.available === item.data.total}<span class="all-available">All available</span>{:else}<span class="sub">{item.data.total ? 'Time unknown' : 'No machines'}</span>{/if}{/if}</div></div>
     {/each}
   </section>
-  {#if snapshot}
-    <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
-  {:else}
-    <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
-  {/if}
+  {#if tourStep === 3}<TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(2)} close={closeTour} />{/if}
+  <div class:tour-target={tourStep === 3}>
+    {#if snapshot}
+      <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
+    {:else}
+      <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
+    {/if}
+  </div>
   <section class="panel machines" id="machines" aria-labelledby="machines-title" aria-busy={loading} tabindex="-1">
     <div class="machines-heading"><h2 id="machines-title">Machines</h2><span class="machine-count">{filtered.length} machines</span></div>
     {#if snapshot && filtered.length}

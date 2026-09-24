@@ -16,6 +16,8 @@ The dashboard is built with **Svelte 5**, **TypeScript**, and **Vite**, and conf
 
 Machine countdowns update every second using stored completion estimates and the device clock. Progress fills show elapsed time from the latest reading toward its estimated finish, since the source data does not include cycle start times. These updates happen in the browser without additional API requests.
 
+First-time visitors are offered a short dashboard tour. Their choice is saved in a cookie for one year. Add `?tour` to the dashboard URL to start the tour again at any time.
+
 The weekly chart shows each day's peak running count during the previous full Monday–Sunday week in the device's local timezone. Daily charts show individual readings, with missing observations left blank. Usage hours are estimated from those readings, bounded by the next observation, the completion estimate, and the 30-minute polling interval.
 
 ## Backend
