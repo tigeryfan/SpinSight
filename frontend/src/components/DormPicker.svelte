@@ -3,7 +3,7 @@
   import { cubicOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
-  let { value = $bindable('All Dorms'), dorms }: { value?: string; dorms: string[] } = $props();
+  let { value = $bindable('All Dorms'), dorms, onSelect }: { value?: string; dorms: string[]; onSelect?: (dorm: string) => void } = $props();
   let open = $state(false);
   let root: HTMLDivElement;
   let trigger: HTMLButtonElement;
@@ -56,7 +56,7 @@
   {#if open}
     <div id="dorm-menu" class="dorm-menu" role="menu" tabindex="-1" aria-label="Dorm" inert={!open} transition:dropdown bind:this={menu} onkeydown={keydown}>
       {#each options as dorm}
-        <button role="menuitemradio" aria-checked={value === dorm} tabindex="-1" onclick={() => { value = dorm; close(true); }}>
+        <button role="menuitemradio" aria-checked={value === dorm} tabindex="-1" onclick={() => { value = dorm; onSelect?.(dorm); close(true); }}>
           {dorm}
           {#if value === dorm}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>{/if}
         </button>

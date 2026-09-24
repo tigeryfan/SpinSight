@@ -8,6 +8,7 @@
   import TourCard from './components/TourCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
   import { deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
+  import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
 
   type Theme = 'light' | 'dark' | 'system';
   const themes: Theme[] = ['light', 'dark', 'system'];
@@ -30,6 +31,9 @@
   let now = $state(Date.now());
   let requestPending = false;
   let retryRefresh = false;
+  let dormReady = $state(false);
+  let requestedDorm: string | null = null;
+  let savedDorm: string | null = null;
   let dorms = $derived([...new Set((snapshot?.machines ?? []).map(machine => machine.dorm))].sort());
   let storedMachines = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let filtered = $derived(deriveMachines(storedMachines, now));
@@ -49,7 +53,11 @@
       snapshot = await (scrape ? refreshSnapshot() : loadSnapshot());
       dataRevision += 1;
       now = Date.now();
-      if (dorm !== 'All Dorms' && !snapshot.machines.some(machine => machine.dorm === dorm)) dorm = 'All Dorms';
+      const availableDorms = [...new Set(snapshot.machines.map(machine => machine.dorm))];
+      if (!dormReady && availableDorms.length) {
+        dorm = selectDorm(availableDorms, requestedDorm, savedDorm);
+        dormReady = true;
+      } else if (dormReady && availableDorms.length && dorm !== 'All Dorms' && !availableDorms.includes(dorm)) dorm = 'All Dorms';
       announcement = snapshot.refreshedAt
         ? `Data last updated ${snapshot.refreshedAt.toLocaleString()}.`
         : 'No machine readings are available yet.';
@@ -62,8 +70,11 @@
     theme = themes[(themes.indexOf(theme) + 1) % themes.length];
     if (theme === 'system') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('spinsight-theme', theme); } catch { /* Keep the session preference when storage is blocked. */ }
+    document.cookie = preferenceCookie('spinsight-theme', theme);
   }
+  $effect(() => {
+    if (dormReady) document.cookie = preferenceCookie('spinsight-dorm', dorm);
+  });
   function rememberTour() {
     document.cookie = 'spinsight-tour=seen; Max-Age=31536000; Path=/; SameSite=Lax';
   }
@@ -86,10 +97,15 @@
   onMount(() => {
     const stopRefreshSpin = () => refreshSpinning = false;
     refreshIcon.addEventListener('animationcancel', stopRefreshSpin);
-    try {
-      const saved = localStorage.getItem('spinsight-theme');
-      if (themes.includes(saved as Theme)) theme = saved as Theme;
-    } catch { /* Default to the system theme. */ }
+    let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
+    if (!savedTheme) {
+      try { savedTheme = localStorage.getItem('spinsight-theme'); }
+      catch { /* Default to the system theme. */ }
+    }
+    if (themes.includes(savedTheme as Theme)) theme = savedTheme as Theme;
+    document.cookie = preferenceCookie('spinsight-theme', theme);
+    savedDorm = cookieValue(document.cookie, 'spinsight-dorm');
+    requestedDorm = new URLSearchParams(window.location.search).get('dorm');
     const seenTour = document.cookie.split(';').some(cookie => cookie.trim() === 'spinsight-tour=seen');
     if (new URLSearchParams(window.location.search).has('tour')) startTour();
     else if (!seenTour) tourStep = -1;
@@ -134,7 +150,11 @@
           {/key}
         </span>
       </button>
-      <div class:tour-target={tourStep === 2}><DormPicker bind:value={dorm} {dorms} /></div>
+      <div class:tour-target={tourStep === 2}><DormPicker bind:value={dorm} {dorms} onSelect={(selected) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('dorm', selected);
+        window.history.replaceState(null, '', url);
+      }} /></div>
     </div>
   </header>
   {#if tourStep === -1}

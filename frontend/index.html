@@ -8,7 +8,8 @@
     <title>SpinSight</title>
     <script>
       try {
-        const theme = localStorage.getItem('spinsight-theme');
+        const savedTheme = document.cookie.split(';').map(cookie => cookie.trim()).find(cookie => cookie.startsWith('spinsight-theme='));
+        const theme = savedTheme ? savedTheme.slice('spinsight-theme='.length) : localStorage.getItem('spinsight-theme');
         if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
       } catch { /* System theme works when storage is unavailable. */ }
     </script>
