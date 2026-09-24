@@ -87,7 +87,15 @@
   <header>
     <div class="brand">
       <h1>SpinSight</h1>
-    <div class="update-note"><span>{#if loading}{snapshot ? 'Refreshing…' : 'Loading…'}{:else if snapshot?.refreshedAt}Updated {snapshot.refreshedAt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}{:else if snapshot}No readings yet{/if}</span></div>
+      <div class="update-note">
+        {#if loading}
+          <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
+        {:else if snapshot?.refreshedAt}
+          <span>Updated</span>{' '}<span class="update-date">{snapshot.refreshedAt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+        {:else if snapshot}
+          <span>No readings yet</span>
+        {/if}
+      </div>
     </div>
     <div class="controls">
       <button class="pill icon-pill" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={loading}
