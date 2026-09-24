@@ -96,6 +96,8 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
 @media (max-width: 480px) {
   body { padding: 16px 12px; }
   header { flex-wrap: wrap; gap: 12px; }
+  .brand { display: flex; align-items: baseline; max-width: 100%; gap: 12px; }
+  .update-note { min-width: 0; }
   .controls { width: 100%; justify-content: flex-end; }
   .stats { gap: 8px; }
   .stat { padding: 12px; }
