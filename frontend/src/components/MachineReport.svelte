@@ -77,7 +77,7 @@
 <style>
   .report-form { display: grid; justify-items: start; gap: 12px; max-width: 480px; margin-top: 20px; }
   label { font-size: 13px; font-weight: 600; }
-  textarea { width: 100%; min-height: 84px; padding: 12px; resize: vertical; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { width: 100%; min-height: 84px; padding: 12px; resize: vertical; border: none; border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: inherit; }
   .send-button { background: var(--selected); color: var(--selected-ink); }
   .report-message { margin: 0; color: var(--warn); font-size: 13px; }
   .report-message.success { color: var(--ink); }
