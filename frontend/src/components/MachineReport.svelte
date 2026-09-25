@@ -3,7 +3,7 @@
   import { reportMachineIds } from '../lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { dorm }: { dorm: string } = $props();
+  let { dorm, theme }: { dorm: string; theme: 'light' | 'dark' } = $props();
   let machineIds = $state('');
   let token = $state('');
   let sending = $state(false);
@@ -12,23 +12,37 @@
   let container: HTMLDivElement;
   let api: TurnstileApi | null = null;
   let widgetId: string | null = null;
+  let renderedTheme: 'light' | 'dark' | null = null;
+
+  function renderWidget() {
+    if (!api) return;
+    if (widgetId) api.remove(widgetId);
+    token = '';
+    widgetId = api.render(container, {
+      sitekey: turnstileSitekey,
+      action: 'machine_report',
+      appearance: 'always',
+      theme,
+      callback: value => { token = value; message = ''; },
+      'error-callback': () => { token = ''; message = 'Verification could not load. Please try again.'; },
+      'expired-callback': () => { token = ''; if (widgetId) api?.reset(widgetId); },
+    });
+    renderedTheme = theme;
+  }
 
   onMount(() => {
     let disposed = false;
     void loadTurnstile().then(turnstile => {
       if (disposed) return;
       api = turnstile;
-      widgetId = turnstile.render(container, {
-        sitekey: turnstileSitekey,
-        action: 'machine_report',
-        appearance: 'always',
-        theme: 'light',
-        callback: value => { token = value; message = ''; },
-        'error-callback': () => { token = ''; message = 'Verification could not load. Please try again.'; },
-        'expired-callback': () => { token = ''; if (widgetId) api?.reset(widgetId); },
-      });
+      renderWidget();
     }).catch(() => { if (!disposed) message = 'Verification could not load. Please reload the page and try again.'; });
     return () => { disposed = true; if (api && widgetId) api.remove(widgetId); };
+  });
+
+  $effect(() => {
+    const nextTheme = theme;
+    if (widgetId && renderedTheme !== nextTheme) renderWidget();
   });
 
   async function send(event: SubmitEvent) {
@@ -65,7 +79,7 @@
   label { font-size: 13px; font-weight: 600; }
   textarea { width: 100%; min-height: 84px; padding: 12px; resize: vertical; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: inherit; }
   .verification { position: relative; width: fit-content; max-width: 100%; height: 65px; overflow: hidden; border-radius: var(--radius-control); }
-  .verification::after { content: ''; position: absolute; inset: 0; border: 1px solid #d4d4d8; border-radius: inherit; pointer-events: none; }
+  .verification::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--turnstile-border); border-radius: inherit; pointer-events: none; }
   .send-button { background: var(--selected); color: var(--selected-ink); }
   .report-message { margin: 0; color: var(--warn); font-size: 13px; }
   .report-message.success { color: var(--ink); }

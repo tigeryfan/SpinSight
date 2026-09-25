@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { solved, debug }: { solved: (token: string) => Promise<boolean>; debug: boolean } = $props();
+  let { solved, debug, theme }: { solved: (token: string) => Promise<boolean>; debug: boolean; theme: 'light' | 'dark' } = $props();
   let container: HTMLDivElement;
   let message = $state('');
   let api: TurnstileApi | null = null;
   let widgetId: string | null = null;
+  let renderedTheme: 'light' | 'dark' | null = null;
   let disposed = false;
   function debugAlert(message: string) {
     if (debug) window.alert(`Turnstile debug\n\n${message}`);
@@ -22,7 +23,7 @@
         sitekey: turnstileSitekey,
         action: 'refresh_challenge',
         appearance: 'always',
-        theme: 'light',
+        theme,
         callback: token => {
           debugAlert('Visible challenge passed in the browser. Sending its token to the Worker.');
           void solved(token).then(ok => {
@@ -38,6 +39,7 @@
           debugAlert('Visible challenge token expired. The widget is restarting.');
         },
       });
+      renderedTheme = theme;
     } catch {
       if (!disposed) {
         message = 'Verification failed to load. Please try again.';
@@ -51,6 +53,11 @@
     void renderWidget();
     return () => { disposed = true; if (api && widgetId) api.remove(widgetId); };
   });
+
+  $effect(() => {
+    const nextTheme = theme;
+    if (widgetId && renderedTheme !== nextTheme) void renderWidget();
+  });
 </script>
 
 <section class="challenge-card" aria-labelledby="challenge-title">
@@ -63,7 +70,7 @@
   .challenge-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid var(--accent); border-radius: var(--radius-panel); background: var(--panel); box-shadow: var(--popover-shadow); }
   .challenge-copy p { margin: 4px 0 0; color: var(--muted); }
   .challenge-widget { position: relative; width: fit-content; max-width: 100%; height: 65px; overflow: hidden; border-radius: var(--radius-control); }
-  .challenge-widget::after { content: ''; position: absolute; inset: 0; border: 1px solid #d4d4d8; border-radius: inherit; pointer-events: none; }
+  .challenge-widget::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--turnstile-border); border-radius: inherit; pointer-events: none; }
   .challenge-error { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--warn); }
   .challenge-error button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; }
   .challenge-copy h2:focus { outline: none; }

@@ -23,6 +23,8 @@
     });
   }
   let theme = $state<Theme>('system');
+  let systemDark = $state(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  let turnstileTheme: 'light' | 'dark' = $derived(theme === 'dark' || (theme === 'system' && systemDark) ? 'dark' : 'light');
   let tourStep = $state(-2);
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
@@ -74,7 +76,7 @@
         sitekey: turnstileSitekey,
         action: 'refresh_background',
         appearance: 'interaction-only',
-        theme: 'light',
+        theme: turnstileTheme,
         callback: token => { receiveBackgroundToken(token); debugAlert('Background check passed in the browser. A token is ready for Refresh.'); },
         'error-callback': () => { stopBackgroundCheck(); debugAlert('Background check failed. Refresh will open the visible challenge card.'); },
         'before-interactive-callback': () => { stopBackgroundCheck(); debugAlert('Background check needs interaction. Refresh will open the visible challenge card.'); },
@@ -205,6 +207,9 @@
     else void showTourStep(tourStep + 1);
   }
   onMount(() => {
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateSystemTheme = () => { systemDark = systemTheme.matches; };
+    systemTheme.addEventListener('change', updateSystemTheme);
     debugTurnstile = new URLSearchParams(window.location.search).has('debug');
     let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
     if (!savedTheme) {
@@ -224,6 +229,7 @@
     void readData();
     void prepareBackgroundCheck();
     return () => {
+      systemTheme.removeEventListener('change', updateSystemTheme);
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', updateClock);
       if (backgroundApi && backgroundWidgetId) backgroundApi.remove(backgroundWidgetId);
@@ -267,7 +273,7 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
-  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} />{/if}
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={turnstileTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
@@ -282,7 +288,7 @@
     <section class="panel assignment-help" id="machines" aria-labelledby="machines-title" tabindex="-1">
       <h2 id="machines-title">No machines assigned to {dorm} yet</h2>
       <p>We need your help identifying this dorm’s washers and dryers. Enter the machine IDs you see on them.</p>
-      {#key dorm}<MachineReport {dorm} />{/key}
+      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} />{/key}
     </section>
   {:else}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
