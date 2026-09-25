@@ -69,7 +69,7 @@
 <form class="report-form" onsubmit={send}>
   <label for="machine-ids">Machine IDs</label>
   <textarea id="machine-ids" bind:value={machineIds} maxlength="500" rows="3" placeholder="For example: W5, D6" required></textarea>
-  <div class="verification" bind:this={container}></div>
+  <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
   <button class="pill send-button" type="submit" disabled={!token || !machineIds.trim() || sending}>{sending ? 'Sending…' : 'Send machine IDs'}</button>
   {#if message}<p class:success={sent} class="report-message" role="status">{message}</p>{/if}
 </form>
@@ -78,8 +78,6 @@
   .report-form { display: grid; justify-items: start; gap: 12px; max-width: 480px; margin-top: 20px; }
   label { font-size: 13px; font-weight: 600; }
   textarea { width: 100%; min-height: 84px; padding: 12px; resize: vertical; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: inherit; }
-  /* Crop the native frame before rounding so its border cannot bleed through. */
-  .verification { width: 300px; max-width: 100%; height: 65px; clip-path: inset(2px round var(--radius-control)); }
   .send-button { background: var(--selected); color: var(--selected-ink); }
   .report-message { margin: 0; color: var(--warn); font-size: 13px; }
   .report-message.success { color: var(--ink); }

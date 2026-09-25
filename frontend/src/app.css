@@ -94,6 +94,9 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
 .spinning { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .background-verification { position: absolute; }
+/* Crop the native iframe border; mask its composited layer at the shared control radius. */
+.turnstile-frame { width: 296px; max-width: 100%; height: 61px; overflow: hidden; border-radius: var(--radius-control); isolation: isolate; mask-image: linear-gradient(#000, #000); }
+.turnstile-content { position: relative; left: -2px; top: -2px; width: 300px; height: 65px; }
 @media (max-width: 760px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid { grid-template-columns: 1fr; }

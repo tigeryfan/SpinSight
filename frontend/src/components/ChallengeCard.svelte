@@ -62,15 +62,13 @@
 
 <section class="challenge-card" aria-labelledby="challenge-title">
   <div class="challenge-copy"><h2 id="challenge-title" tabindex="-1">Verify to refresh</h2><p>Complete this check to get the latest machine status.</p></div>
-  <div class="challenge-widget" bind:this={container}></div>
+  <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
   {#if message}<div class="challenge-error" role="alert"><span>{message}</span><button onclick={() => void renderWidget()}>Try again</button></div>{/if}
 </section>
 
 <style>
   .challenge-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid var(--accent); border-radius: var(--radius-panel); background: var(--panel); box-shadow: var(--popover-shadow); }
   .challenge-copy p { margin: 4px 0 0; color: var(--muted); }
-  /* Crop the native frame before rounding so its border cannot bleed through. */
-  .challenge-widget { width: 300px; max-width: 100%; height: 65px; clip-path: inset(2px round var(--radius-control)); }
   .challenge-error { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--warn); }
   .challenge-error button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; }
   .challenge-copy h2:focus { outline: none; }
