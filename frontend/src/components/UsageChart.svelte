@@ -270,7 +270,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{#if view === -1}{formatDate(dates[0])}–{formatDate(dates[6])}{:else}{formatDate(dates[view])}{/if}{#if view === -1} · Daily peak of recorded running counts.{/if}{#if hasGaps} · Gaps mean no readings were available.{/if}</p>
+  <p class="history-note">{#if view === -1}{formatDate(dates[0])}–{formatDate(dates[6])}{:else}{formatDate(dates[view])}{/if}{#if view === -1} · Daily peak of recorded running counts.{/if}{#if hasGaps}{view === -1 ? ' ' : ' · '}Gaps mean no readings were available.{/if}</p>
 </section>
 
 <style>
