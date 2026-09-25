@@ -69,8 +69,8 @@
 <style>
   .challenge-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid var(--accent); border-radius: var(--radius-panel); background: var(--panel); box-shadow: var(--popover-shadow); }
   .challenge-copy p { margin: 4px 0 0; color: var(--muted); }
-  .challenge-widget { position: relative; width: 300px; max-width: 100%; height: 65px; overflow: hidden; border-radius: var(--radius-control); background: var(--turnstile-surface); }
-  .challenge-widget::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--turnstile-surface); border-radius: inherit; pointer-events: none; }
+  /* Crop the native frame before rounding so its border cannot bleed through. */
+  .challenge-widget { width: 300px; max-width: 100%; height: 65px; clip-path: inset(2px round var(--radius-control)); }
   .challenge-error { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--warn); }
   .challenge-error button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; }
   .challenge-copy h2:focus { outline: none; }
