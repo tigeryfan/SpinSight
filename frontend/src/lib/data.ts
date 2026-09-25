@@ -44,6 +44,15 @@ const apiBase = import.meta.env?.VITE_API_BASE_URL || 'https://api.spinsight.xyz
 const minute = 60_000;
 const scheduledPollInterval = 30 * minute;
 
+export async function reportMachineIds(dorm: string, machineIds: string, token: string): Promise<void> {
+  const response = await fetch(new URL('/v1/machine-report', apiBase), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dorm, machineIds, token }),
+  });
+  if (!response.ok) throw new Error(`Machine report failed (${response.status}).`);
+}
+
 function timestamp(value: string | null): number | null {
   if (!value) return null;
   const time = Date.parse(value);

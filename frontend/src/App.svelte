@@ -5,12 +5,14 @@
   import DormPicker from './components/DormPicker.svelte';
   import Icon from './components/Icon.svelte';
   import MachineCard from './components/MachineCard.svelte';
+  import MachineReport from './components/MachineReport.svelte';
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
   import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
+  import { dorms, isUnassignedDorm } from './lib/dorms';
 
   type Theme = 'light' | 'dark' | 'system';
   const themes: Theme[] = ['light', 'dark', 'system'];
@@ -42,7 +44,6 @@
   let dormReady = $state(false);
   let requestedDorm: string | null = null;
   let savedDorm: string | null = null;
-  let dorms = $derived([...new Set((snapshot?.machines ?? []).map(machine => machine.dorm))].sort());
   let storedMachines = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let filtered = $derived(deriveMachines(storedMachines, now));
   let washers = $derived(summary(filtered, 'Washer'));
@@ -105,11 +106,10 @@
     snapshot = next;
     dataRevision += 1;
     now = Date.now();
-    const availableDorms = [...new Set(snapshot.machines.map(machine => machine.dorm))];
-    if (!dormReady && availableDorms.length) {
-      dorm = selectDorm(availableDorms, requestedDorm, savedDorm);
+    if (!dormReady) {
+      dorm = selectDorm(dorms, requestedDorm, savedDorm);
       dormReady = true;
-    } else if (dormReady && availableDorms.length && dorm !== 'All Dorms' && !availableDorms.includes(dorm)) dorm = 'All Dorms';
+    }
     announcement = snapshot.refreshedAt
       ? `Data last updated ${snapshot.refreshedAt.toLocaleString()}.`
       : 'No machine readings are available yet.';
@@ -277,6 +277,13 @@
   {/if}
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
+  {#if isUnassignedDorm(dorm)}
+    <section class="panel assignment-help" id="machines" aria-labelledby="machines-title" tabindex="-1">
+      <h2 id="machines-title">No machines assigned to {dorm} yet</h2>
+      <p>We need your help identifying this dorm’s washers and dryers. Enter the machine IDs you see on them.</p>
+      {#key dorm}<MachineReport {dorm} />{/key}
+    </section>
+  {:else}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
     {#each [{ label: 'Washers available', data: washers }, { label: 'Dryers available', data: dryers }] as item}
       <div class="stat"><div class="label">{item.label}</div><div class="value">{snapshot ? item.data.available : '—'} <span class="sub">/ {snapshot ? item.data.total : '—'}</span></div></div>
@@ -299,9 +306,10 @@
       <div class="grid">
         {#each filtered as machine (machine.id)}
           {@const ranking = usageRank(machine, filtered)}
-          <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms'} animationKey={dataRevision} />
+          <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms' && machine.dorm !== 'Unassigned'} animationKey={dataRevision} />
         {/each}
       </div>
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
+  {/if}
 </main>

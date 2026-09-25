@@ -76,6 +76,9 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
 .text-button:hover { color: var(--ink); }
 .chart-loading { min-height: 380px; display: grid; place-items: center; color: var(--muted); }
 .empty { padding: 24px 0; color: var(--muted); text-align: center; }
+.assignment-help { padding: 28px; }
+.assignment-help h2 { font-size: 18px; }
+.assignment-help > p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 .error { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid var(--warn); border-radius: var(--radius-control); background: var(--panel); }
 .tour-invite { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid var(--accent); border-radius: var(--radius-panel); background: var(--panel); box-shadow: var(--popover-shadow); }
 .tour-invite h2 { margin: 0; }
@@ -106,6 +109,7 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
   .stat .label { font-size: 10px; }
   .stat .value { font-size: 21px; }
   .machines { --panel-padding: 12px; }
+  .assignment-help { padding: 20px; }
   .machine-count { display: none; }
   .tour-invite { align-items: stretch; flex-direction: column; padding: 14px; }
   .tour-invite-actions { justify-content: flex-end; }

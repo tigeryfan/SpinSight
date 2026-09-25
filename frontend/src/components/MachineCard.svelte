@@ -18,7 +18,7 @@
       <div class="progress-fill" style:--progress-width={progressWidth}></div>
     {/key}
   </div>
-  <button class="machine-button" aria-expanded={expanded} aria-controls={`details-${machine.id}`} aria-label={`${machine.dorm}, ${machine.machineType} ${machine.machineName}, ${status}. ${expanded ? 'Hide' : 'Show'} details`}
+  <button class="machine-button" aria-expanded={expanded} aria-controls={`details-${machine.id}`} aria-label={`${machine.dorm === 'Unassigned' ? '' : `${machine.dorm}, `}${machine.machineType} ${machine.machineName}, ${status}. ${expanded ? 'Hide' : 'Show'} details`}
     onclick={() => { expanded = !expanded; dismissed = !expanded; }}
     onpointerenter={() => dismissed = false} onfocus={() => dismissed = false}
     onkeydown={(event) => { if (event.key === 'Escape') { expanded = false; dismissed = true; } }}>
