@@ -7,6 +7,7 @@ export interface TurnstileApi {
     'expired-callback'?: () => void;
     'before-interactive-callback'?: () => void;
     appearance?: 'always' | 'interaction-only';
+    theme?: 'light' | 'dark' | 'auto';
   }) => string;
   reset: (widgetId: string) => void;
   remove: (widgetId: string) => void;

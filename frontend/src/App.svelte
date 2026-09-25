@@ -74,6 +74,7 @@
         sitekey: turnstileSitekey,
         action: 'refresh_background',
         appearance: 'interaction-only',
+        theme: 'light',
         callback: token => { receiveBackgroundToken(token); debugAlert('Background check passed in the browser. A token is ready for Refresh.'); },
         'error-callback': () => { stopBackgroundCheck(); debugAlert('Background check failed. Refresh will open the visible challenge card.'); },
         'before-interactive-callback': () => { stopBackgroundCheck(); debugAlert('Background check needs interaction. Refresh will open the visible challenge card.'); },
