@@ -88,6 +88,13 @@
       });
     } catch { receiveBackgroundToken(null); debugAlert('Background check could not load. Refresh will open the visible challenge card.'); }
   }
+  $effect(() => {
+    turnstileTheme;
+    if (backgroundWidgetId) {
+      stopBackgroundCheck();
+      if (!challengeVisible) void prepareBackgroundCheck();
+    }
+  });
   async function takeBackgroundToken(): Promise<string | null> {
     if (backgroundToken) { const token = backgroundToken; backgroundToken = null; return token; }
     if (!backgroundWidgetId) return null;
