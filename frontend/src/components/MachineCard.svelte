@@ -26,7 +26,7 @@
     <span class="status">{status}</span>
   </button>
   {#if machine.status === 'Running' && machine.progress !== null}
-    <span class="sr-only" role="progressbar" aria-label={`${machine.machineName} estimate elapsed since last update`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={percentage} aria-valuetext={`${percentage}% of estimated remaining time elapsed since last update, ${status}`}></span>
+    <span class="sr-only" role="progressbar" aria-label={`${machine.machineName} estimated cycle progress`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={percentage} aria-valuetext={`${percentage}% of estimated cycle elapsed, ${status}`}></span>
   {/if}
   <div class="machine-details" id={`details-${machine.id}`}>
     <dl>

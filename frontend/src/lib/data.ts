@@ -42,7 +42,11 @@ interface DashboardResponse {
 
 const apiBase = import.meta.env?.VITE_API_BASE_URL || 'https://api.spinsight.xyz';
 const minute = 60_000;
-const scheduledPollInterval = 30 * minute;
+const cycleMinutes = { Washer: 37, Dryer: 45 };
+
+function cycleDuration(type: string | null): number | null {
+  return type === 'Washer' || type === 'Dryer' ? cycleMinutes[type] * minute : null;
+}
 
 export async function reportMachineIds(dorm: string, machineIds: string, token: string): Promise<void> {
   const response = await fetch(new URL('/v1/machine-report', apiBase), {
@@ -100,31 +104,39 @@ export function weeklyChartBounds(dates: Date[]): { start: number; end: number }
   };
 }
 
-// Estimate observed running time after each poll, stopping at the next observation,
-// ETA, or 30-minute scheduled interval. Missing gaps are never filled beyond that cap.
-// These are estimates from samples, not complete measured cycle durations.
+// Infer cycle starts from finish estimates and standard durations. Merge overlapping
+// intervals so repeated polls and revised estimates do not count the same time twice.
 function observedHours(history: MachineSnapshot[], dates: Date[]): Map<string, number> {
   const start = dates[0].getTime();
   const end = weekEnd(dates).getTime();
-  const byMachine = new Map<string, MachineSnapshot[]>();
+  const byMachine = new Map<string, { start: number; end: number }[]>();
+  const hours = new Map<string, number>();
   for (const row of history) {
     const time = timestamp(row.poll_time);
-    if (time === null || time < start || time >= end) continue;
-    const rows = byMachine.get(row.bluetooth_address) ?? [];
-    rows.push(row);
-    byMachine.set(row.bluetooth_address, rows);
+    if (time === null) continue;
+    if (row.status !== 'Running') {
+      if (time >= start && time < end && (row.status === 'Available' || row.status === 'Completed')) {
+        hours.set(row.bluetooth_address, 0);
+      }
+      continue;
+    }
+    const eta = timestamp(row.estimated_completion_time);
+    const duration = cycleDuration(row.machine_type);
+    if (eta === null || duration === null) continue;
+    const interval = { start: Math.max(start, eta - duration), end: Math.min(end, eta) };
+    if (interval.end <= interval.start) continue;
+    const intervals = byMachine.get(row.bluetooth_address) ?? [];
+    intervals.push(interval);
+    byMachine.set(row.bluetooth_address, intervals);
   }
-  const hours = new Map<string, number>();
-  for (const [id, rows] of byMachine) {
-    rows.sort((a, b) => Date.parse(a.poll_time) - Date.parse(b.poll_time));
+  for (const [id, intervals] of byMachine) {
+    intervals.sort((a, b) => a.start - b.start);
     let duration = 0;
-    rows.forEach((row, index) => {
-      if (row.status !== 'Running') return;
-      const time = Date.parse(row.poll_time);
-      const next = rows[index + 1] ? Date.parse(rows[index + 1].poll_time) : end;
-      const eta = timestamp(row.estimated_completion_time) ?? end;
-      duration += Math.max(0, Math.min(next, eta, time + scheduledPollInterval, end) - time);
-    });
+    let coveredUntil = start;
+    for (const interval of intervals) {
+      duration += Math.max(0, interval.end - Math.max(interval.start, coveredUntil));
+      coveredUntil = Math.max(coveredUntil, interval.end);
+    }
     hours.set(id, duration / (60 * minute));
   }
   return hours;
@@ -134,8 +146,8 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   const dates = lastFullWeek(now);
   const url = new URL('/v1/dashboard', apiBase);
   url.searchParams.set('start', dates[0].toISOString());
-  // Include next Monday's first reading before 00:15 for Sunday's 24:00.
-  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + 15 * minute).toISOString());
+  // Include cycles observed after midnight that may have started during Sunday.
+  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + Math.max(...Object.values(cycleMinutes)) * minute).toISOString());
   const payload = await requestJson(url) as DashboardResponse;
   if (!payload || !Array.isArray(payload.machines) || !Array.isArray(payload.history)
     || !payload.machines.every(isRecord) || !payload.history.every(isRecord)
@@ -202,15 +214,14 @@ export async function refreshSnapshot(token: string, mode: 'background' | 'chall
 export function deriveMachines(machines: Machine[], now: number): Machine[] {
   return machines.map(machine => {
     const eta = timestamp(machine.estimatedCompletionTime);
-    const poll = timestamp(machine.pollTime);
+    const duration = cycleDuration(machine.machineType);
     const running = machine.status === 'Running' && eta !== null && Number.isFinite(now);
     return {
       ...machine,
       estimatedCompletionTime: eta === null ? null : machine.estimatedCompletionTime,
       minutesLeft: running ? Math.max(0, Math.ceil((eta - now) / minute)) : null,
       estimatedComplete: running && now - eta > minute,
-      // The upstream data has no cycle start. Show only time elapsed since its poll.
-      progress: running && poll !== null && eta > poll ? Math.min(1, Math.max(0, (now - poll) / (eta - poll))) : null,
+      progress: running && duration !== null ? Math.min(1, Math.max(0, 1 - (eta - now) / duration)) : null,
     };
   });
 }
