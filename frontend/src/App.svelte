@@ -282,6 +282,7 @@
 {/snippet}
 <a class="skip-link" href="#machines">Skip to machines</a>
 <main class="wrap">
+  {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true"></div>{/if}
   <header>
     <div class="brand">
       <h1>SpinSight</h1>
@@ -321,7 +322,7 @@
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
       <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
     </section>
-  {:else if tourStep >= 0 && tourStep < 3}
+  {:else if tourStep >= 0 && tourStep <= 3}
     <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
   {#if privacyVisible && (tourStep !== 3 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
@@ -342,7 +343,6 @@
       <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}{#if item.data.total > 0 && item.data.available === item.data.total}<span class="all-available">All available</span>{:else}<span class="sub">{item.data.total ? 'Time unknown' : 'No machines'}</span>{/if}{/if}</div></div>
     {/each}
   </section>
-  {#if tourStep === 3}<TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(2)} close={closeTour} />{/if}
   {#if privacyVisible && tourStep === 3}{@render privacyCard()}{/if}
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
