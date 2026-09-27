@@ -2,6 +2,7 @@
   import { onMount, tick } from 'svelte';
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
+  import { cardTransition } from './lib/transitions';
   import DormPicker from './components/DormPicker.svelte';
   import SelectMenu from './components/SelectMenu.svelte';
   import Icon from './components/Icon.svelte';
@@ -286,14 +287,14 @@
 
 <svelte:head><title>SpinSight · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
-  <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1">
+  <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
     <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
     <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
   </section>
 {/snippet}
 {#snippet whyNoLaundryCard()}
-  <section class="panel why-no-laundry" id="why-no-laundry" aria-labelledby="why-no-laundry-title" tabindex="-1">
+  <section class="panel why-no-laundry" id="why-no-laundry" aria-labelledby="why-no-laundry-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="why-no-laundry-title">Why are some cycles missing?</h2><button class="info-card-close" aria-label="Close missing data" onclick={() => whyNoLaundryVisible = false}>×</button></div>
     <p>{whyNoLaundryText}</p>
   </section>
@@ -336,7 +337,7 @@
   <div class="background-verification" bind:this={backgroundContainer}></div>
   {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={turnstileTheme} />{/if}
   {#if tourStep === -1}
-    <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title">
+    <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" transition:cardTransition>
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
       <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
     </section>
@@ -346,7 +347,7 @@
   {#if privacyVisible && (tourStep !== 5 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
   {#if whyNoLaundryVisible}{@render whyNoLaundryCard()}{/if}
   <p class="sr-only" role="status">{announcement}</p>
-  {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
+  {#if error}<div class="error" role="alert" transition:cardTransition><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
   {#if isUnassignedDorm(dorm)}
     <section class="panel assignment-help" id="machines" aria-labelledby="machines-title" tabindex="-1">
       <h2 id="machines-title">No machines assigned to {dorm} yet</h2>

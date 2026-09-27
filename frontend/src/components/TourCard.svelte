@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { cardTransition } from '../lib/transitions';
   let { step, next, back, close }: {
     step: number;
     next: () => void;
@@ -17,7 +18,7 @@
   ];
 </script>
 
-<section class="tour-card" aria-labelledby="tour-title" aria-live="polite">
+<section class="tour-card" aria-labelledby="tour-title" aria-live="polite" transition:cardTransition|global>
   <div class="tour-copy">
     <h2 id="tour-title" tabindex="-1">{steps[step].title}</h2>
     <p>{steps[step].text}</p>
