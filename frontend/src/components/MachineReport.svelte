@@ -3,7 +3,7 @@
   import { sendReport } from '../lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { dorm, theme, problem = false }: { dorm: string; problem?: boolean; theme: 'light' | 'dark' } = $props();
+  let { dorm, theme, problem = false, debug = false }: { dorm: string; problem?: boolean; debug?: boolean; theme: 'light' | 'dark' } = $props();
   let content = $state('');
   let token = $state('');
   let sending = $state(false);
@@ -36,7 +36,9 @@
       if (disposed) return;
       api = turnstile;
       renderWidget();
-    }).catch(() => { if (!disposed) message = 'Verification could not load. Please reload the page and try again.'; });
+    }).catch(cause => {
+      if (!disposed) message = debug ? String(cause instanceof Error ? cause.message : cause) : 'Verification could not load. Please reload the page and try again.';
+    });
     return () => { disposed = true; if (api && widgetId) api.remove(widgetId); };
   });
 
@@ -56,8 +58,8 @@
       sent = true;
       content = '';
       message = 'Your report was submitted.';
-    } catch {
-      message = 'Could not send the report. Please try again.';
+    } catch (cause) {
+      message = debug ? String(cause instanceof Error ? cause.message : cause) : 'Could not send the report. Please try again.';
     } finally {
       token = '';
       if (widgetId) api?.reset(widgetId);
@@ -80,7 +82,7 @@
   label { font-size: 13px; font-weight: 600; }
   textarea { width: 100%; min-height: 84px; padding: 12px; resize: vertical; border: none; border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: inherit; }
   .send-button { background: var(--selected); color: var(--selected-ink); }
-  .report-message { margin: 0; color: var(--warn); font-size: 13px; }
+  .report-message { margin: 0; color: var(--warn); font-size: 13px; overflow-wrap: anywhere; white-space: pre-wrap; }
   .report-message.success { color: var(--ink); }
   .report-context { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 </style>

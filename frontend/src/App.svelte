@@ -387,7 +387,7 @@
     <section class="panel assignment-help" id="machines" aria-labelledby="machines-title" tabindex="-1">
       <h2 id="machines-title">No machines assigned to {dorm} yet</h2>
       <p>We need your help identifying this dorm’s washers and dryers. Enter the machine IDs you see on them.</p>
-      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} />{/key}
+      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} debug={debugTurnstile} />{/key}
     </section>
   {:else}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
@@ -434,7 +434,7 @@
   {#if problemVisible}
     <section class="panel" id="problem-report" aria-labelledby="problem-title" transition:cardTransition>
       <div class="info-card-heading"><h2 id="problem-title">Report a problem</h2><button class="info-card-close" aria-label="Close problem report" onclick={() => { problemVisible = false; void tick().then(() => document.getElementById('report-problem-button')?.focus()); }}>×</button></div>
-      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} problem />{/key}
+      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} debug={debugTurnstile} problem />{/key}
     </section>
   {/if}
   <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button><button id="report-problem-button" type="button" aria-expanded={problemVisible} aria-controls="problem-report" onclick={showProblem}>Report a problem</button></footer>

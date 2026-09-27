@@ -66,7 +66,17 @@ export async function sendReport(dorm: string, content: string, token: string, p
       },
     }),
   });
-  if (!response.ok) throw new Error(`Report failed (${response.status}).`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    let detail = body;
+    try {
+      const parsed: unknown = JSON.parse(body);
+      if (parsed && typeof parsed === 'object' && 'error' in parsed && typeof parsed.error === 'string') {
+        detail = parsed.error;
+      }
+    } catch { /* Keep non-JSON error responses as text. */ }
+    throw new Error(`Report failed (${response.status})${detail ? `: ${detail}` : '.'}`);
+  }
 }
 
 function timestamp(value: string | null): number | null {
