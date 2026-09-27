@@ -2,7 +2,10 @@
   "name": "spinsight-frontend",
   "main": "./src/worker.ts",
   "compatibility_date": "2026-09-21",
-  "services": [{ "binding": "API", "service": "spinsight-scraper" }],
+  "services": [
+    { "binding": "API", "service": "spinsight-scraper" },
+    { "binding": "RELAY", "service": "spinsight-telegram-relay" }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

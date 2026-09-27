@@ -1,5 +1,6 @@
 interface Env {
   API: { fetch(request: Request): Promise<Response> };
+  RELAY: { fetch(request: Request): Promise<Response> };
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -9,6 +10,10 @@ export default {
     if (url.pathname === '/api/v1/dashboard' || url.pathname === '/api/v1/scrape') {
       url.pathname = url.pathname.slice('/api'.length);
       return env.API.fetch(new Request(url, request));
+    }
+    if (url.pathname === '/api/v1/machine-report' || url.pathname === '/api/v1/problem-report') {
+      url.pathname = url.pathname.slice('/api'.length);
+      return env.RELAY.fetch(new Request(url, request));
     }
     return env.ASSETS.fetch(request);
   },
