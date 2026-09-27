@@ -9,7 +9,7 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
-  import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Snapshot } from './lib/data';
+  import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
   import { dorms, isUnassignedDorm } from './lib/dorms';
@@ -48,6 +48,18 @@
   let savedDorm: string | null = null;
   let storedMachines = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let filtered = $derived(deriveMachines(storedMachines, now));
+  let machineSort = $state('name-asc');
+  let sortedMachines = $derived([...filtered].sort(compareMachines));
+  function compareMachines(a: Machine, b: Machine) {
+    const byName = a.machineName.localeCompare(b.machineName, undefined, { numeric: true });
+    if (machineSort.startsWith('usage-')) {
+      if (a.usageHoursPastWeek === null && b.usageHoursPastWeek !== null) return 1;
+      if (b.usageHoursPastWeek === null && a.usageHoursPastWeek !== null) return -1;
+      const byUsage = (a.usageHoursPastWeek ?? 0) - (b.usageHoursPastWeek ?? 0);
+      return (machineSort === 'usage-asc' ? byUsage : -byUsage) || byName || a.id.localeCompare(b.id);
+    }
+    return (machineSort === 'name-desc' ? -byName : byName) || a.id.localeCompare(b.id);
+  }
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
 
@@ -315,12 +327,30 @@
     {/if}
   </div>
   <section class="panel machines" id="machines" aria-labelledby="machines-title" aria-busy={loading} tabindex="-1">
-    <div class="machines-heading"><h2 id="machines-title">Machines</h2><span class="machine-count">{filtered.length} machines</span></div>
+    <div class="machines-heading">
+      <h2 id="machines-title">Machines</h2>
+      <span class="machine-count">{filtered.length} machines</span>
+      <label class="machine-sort">Sort by
+        <select bind:value={machineSort}>
+          <option value="name-asc">Name A-Z</option>
+          <option value="name-desc">Name Z-A</option>
+          <option value="usage-desc">Usage High-Low</option>
+          <option value="usage-asc">Usage Low-High</option>
+        </select>
+      </label>
+    </div>
     {#if snapshot && filtered.length}
       <div class="grid">
-        {#each filtered as machine (machine.id)}
-          {@const ranking = usageRank(machine, filtered)}
-          <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms' && machine.dorm !== 'Unassigned'} animationKey={dataRevision} />
+        {#each ['Washer', 'Dryer', 'Other'] as type}
+          {@const machines = sortedMachines.filter(machine => type === 'Other' ? !['Washer', 'Dryer'].includes(machine.machineType) : machine.machineType === type)}
+          {#if type !== 'Other' || machines.length}
+            <div class="machine-column" class:other-machines={type === 'Other'} role="group" aria-label={type === 'Other' ? 'Other machines' : `${type}s`}>
+              {#each machines as machine (machine.id)}
+                {@const ranking = usageRank(machine, filtered)}
+                <MachineCard {machine} {ranking} showDorm={dorm === 'All Dorms' && machine.dorm !== 'Unassigned'} animationKey={dataRevision} />
+              {/each}
+            </div>
+          {/if}
         {/each}
       </div>
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}

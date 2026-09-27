@@ -59,6 +59,16 @@
   dt { opacity: .8; }
   dd { margin: 0; }
   .extra { border-top: 1px solid transparent; margin-top: 5px; padding-top: 8px; }
+  @media (max-width: 760px) {
+    .machine-button { flex-direction: column; align-items: flex-start; padding: 12px 10px; }
+    .name { overflow-wrap: anywhere; }
+    .status { text-align: left; }
+    .dorm { white-space: normal; }
+    .expanded .machine-details { padding: 0 10px 12px; overflow-wrap: anywhere; }
+    .expanded dl div { flex-direction: column; gap: 2px; }
+    .machine-details { min-width: 0; width: 100%; }
+    dl div { flex-wrap: wrap; gap: 2px 8px; }
+  }
   @media (hover: none) { .machine:not(.expanded) .machine-details { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     .machine, .machine-details { transition: none; }
