@@ -70,7 +70,7 @@
   <label for={problem ? 'problem-description' : 'machine-ids'}>{problem ? 'Describe the problem' : 'Machine IDs'}</label>
   <textarea id={problem ? 'problem-description' : 'machine-ids'} bind:value={content} maxlength={problem ? 1500 : 500} rows="3" placeholder={problem ? 'What went wrong? Include the dorm and machine ID if relevant.' : 'For example: W5, D6'} required></textarea>
   <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
-  <p class="report-context">Sending includes this page’s URL, browser details, language, window size, and verification status for troubleshooting.</p>
+  <p class="report-context">Sending a report includes relevant troubleshooting details.</p>
   <button class="pill send-button" type="submit" disabled={!token || !content.trim() || sending}>{sending ? 'Sending…' : problem ? 'Send report' : 'Send machine IDs'}</button>
   {#if message}<p class:success={sent} class="report-message" role="status">{message}</p>{/if}
 </form>
