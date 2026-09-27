@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { reportMachineIds } from '../lib/data';
+  import { sendReport } from '../lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
-  let { dorm, theme }: { dorm: string; theme: 'light' | 'dark' } = $props();
-  let machineIds = $state('');
+  let { dorm, theme, problem = false }: { dorm: string; problem?: boolean; theme: 'light' | 'dark' } = $props();
+  let content = $state('');
   let token = $state('');
   let sending = $state(false);
   let message = $state('');
@@ -20,7 +20,7 @@
     token = '';
     widgetId = api.render(container, {
       sitekey: turnstileSitekey,
-      action: 'machine_report',
+      action: problem ? 'problem_report' : 'machine_report',
       appearance: 'always',
       theme,
       callback: value => { token = value; message = ''; },
@@ -47,17 +47,17 @@
 
   async function send(event: SubmitEvent) {
     event.preventDefault();
-    if (sending || !token || !machineIds.trim()) return;
+    if (sending || !token || !content.trim()) return;
     sending = true;
     message = '';
     sent = false;
     try {
-      await reportMachineIds(dorm, machineIds.trim(), token);
+      await sendReport(dorm, content.trim(), token, problem);
       sent = true;
-      machineIds = '';
-      message = 'Thanks. Your machine IDs were sent.';
+      content = '';
+      message = problem ? 'Thanks. Your problem report was sent.' : 'Thanks. Your machine IDs were sent.';
     } catch {
-      message = 'Could not send the machine IDs. Please try again.';
+      message = 'Could not send the report. Please try again.';
     } finally {
       token = '';
       if (widgetId) api?.reset(widgetId);
@@ -67,10 +67,10 @@
 </script>
 
 <form class="report-form" onsubmit={send}>
-  <label for="machine-ids">Machine IDs</label>
-  <textarea id="machine-ids" bind:value={machineIds} maxlength="500" rows="3" placeholder="For example: W5, D6" required></textarea>
+  <label for={problem ? 'problem-description' : 'machine-ids'}>{problem ? 'Describe the problem' : 'Machine IDs'}</label>
+  <textarea id={problem ? 'problem-description' : 'machine-ids'} bind:value={content} maxlength={problem ? 1500 : 500} rows="3" placeholder={problem ? 'What went wrong? Include the dorm and machine ID if relevant.' : 'For example: W5, D6'} required></textarea>
   <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
-  <button class="pill send-button" type="submit" disabled={!token || !machineIds.trim() || sending}>{sending ? 'Sending…' : 'Send machine IDs'}</button>
+  <button class="pill send-button" type="submit" disabled={!token || !content.trim() || sending}>{sending ? 'Sending…' : problem ? 'Send report' : 'Send machine IDs'}</button>
   {#if message}<p class:success={sent} class="report-message" role="status">{message}</p>{/if}
 </form>
 

@@ -4,7 +4,8 @@ interface Env {
   TELEGRAM_CHAT_ID?: string;
 }
 
-const allowedDorms = new Set(['Alamo', 'Appleby', 'Jameson', 'Jones']);
+const allowedDorms = new Set(['Appleby', 'Jameson', 'Jones']);
+const reportDorms = new Set(['All Dorms', 'Alamo', 'Appleby', 'Jameson', 'Jones', 'North Hutch', 'South Hutch', 'Upper Dorms']);
 const allowedOrigin = 'https://spinsight.xyz';
 
 function response(body: object, status: number, headers: Headers): Response {
@@ -24,7 +25,9 @@ export default {
     headers.set('Access-Control-Allow-Origin', allowedOrigin);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     if (request.method !== 'POST') return response({ error: 'Use POST.' }, 405, headers);
-    if (new URL(request.url).pathname !== '/v1/machine-report') return response({ error: 'Not found.' }, 404, headers);
+    const path = new URL(request.url).pathname;
+    const problem = path === '/v1/problem-report';
+    if (!problem && path !== '/v1/machine-report') return response({ error: 'Not found.' }, 404, headers);
     if (!env.TURNSTILE_SECRET || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
       return response({ error: 'Report service is unavailable.' }, 503, headers);
     }
@@ -38,9 +41,10 @@ export default {
       return response({ error: 'Invalid report.' }, 400, headers);
     }
     const dorm = body?.dorm;
-    const machineIds = typeof body?.machineIds === 'string' ? body.machineIds.trim() : '';
+    const value = problem ? body?.description : body?.machineIds;
+    const content = typeof value === 'string' ? value.trim() : '';
     const token = body?.token;
-    if (typeof dorm !== 'string' || !allowedDorms.has(dorm) || !machineIds || machineIds.length > 500
+    if (typeof dorm !== 'string' || !(problem ? reportDorms : allowedDorms).has(dorm) || !content || content.length > (problem ? 1500 : 500)
       || typeof token !== 'string' || !token || token.length > 2048) {
       return response({ error: 'Invalid report.' }, 400, headers);
     }
@@ -53,13 +57,13 @@ export default {
         signal: AbortSignal.timeout(10_000),
       });
       const result = await check.json() as { success?: boolean; action?: string; hostname?: string };
-      if (!check.ok || result.success !== true || result.action !== 'machine_report' || result.hostname !== 'spinsight.xyz') {
+      if (!check.ok || result.success !== true || result.action !== (problem ? 'problem_report' : 'machine_report') || result.hostname !== 'spinsight.xyz') {
         return response({ error: 'Verification failed. Please try again.' }, 403, headers);
       }
       const sent = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: `SpinSight machine IDs for ${dorm}\n\n${machineIds}` }),
+        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: `SpinSight ${problem ? 'problem report' : 'machine IDs'} for ${dorm}\n\n${content}` }),
         signal: AbortSignal.timeout(10_000),
       });
       const telegram = await sent.json() as { ok?: boolean };

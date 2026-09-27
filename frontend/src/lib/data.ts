@@ -48,13 +48,13 @@ function cycleDuration(type: string | null): number | null {
   return type === 'Washer' || type === 'Dryer' ? cycleMinutes[type] * minute : null;
 }
 
-export async function reportMachineIds(dorm: string, machineIds: string, token: string): Promise<void> {
-  const response = await fetch(new URL('/v1/machine-report', apiBase), {
+export async function sendReport(dorm: string, content: string, token: string, problem = false): Promise<void> {
+  const response = await fetch(new URL(problem ? '/v1/problem-report' : '/v1/machine-report', apiBase), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dorm, machineIds, token }),
+    body: JSON.stringify({ dorm, ...(problem ? { description: content } : { machineIds: content }), token }),
   });
-  if (!response.ok) throw new Error(`Machine report failed (${response.status}).`);
+  if (!response.ok) throw new Error(`Report failed (${response.status}).`);
 }
 
 function timestamp(value: string | null): number | null {

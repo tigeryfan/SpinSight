@@ -32,6 +32,22 @@
     return tourStep >= 0 ? { duration: 0 } : cardTransition(node);
   }
   let privacyVisible = $state(false);
+  let problemVisible = $state(false);
+  async function showProblem() {
+    problemVisible = true;
+    await tick();
+    document.getElementById('problem-description')?.focus();
+  }
+  function showAllDorms(event: MouseEvent) {
+    event.preventDefault();
+    dorm = 'All Dorms';
+    dormReady = true;
+    const url = new URL(window.location.href);
+    url.searchParams.set('dorm', dorm);
+    url.hash = '';
+    window.history.replaceState(null, '', url);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
   async function showPrivacy(event: MouseEvent) {
     event.preventDefault();
     whyNoLaundryVisible = false;
@@ -320,7 +336,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1>SpinSight</h1>
+      <h1><a class="brand-home" href="?dorm=All%20Dorms" onclick={showAllDorms}>SpinSight</a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -414,10 +430,17 @@
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
   {/if}
-  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button></footer>
+  {#if problemVisible}
+    <section class="panel" id="problem-report" aria-labelledby="problem-title" transition:cardTransition>
+      <div class="info-card-heading"><h2 id="problem-title">Report a problem</h2><button class="info-card-close" aria-label="Close problem report" onclick={() => { problemVisible = false; void tick().then(() => document.getElementById('report-problem-button')?.focus()); }}>×</button></div>
+      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} problem />{/key}
+    </section>
+  {/if}
+  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button><button id="report-problem-button" type="button" aria-expanded={problemVisible} aria-controls="problem-report" onclick={showProblem}>Report a problem</button></footer>
 </main>
 
 <style>
+  .brand-home { color: inherit; text-decoration: none; }
   .privacy-card { scroll-margin-top: 16px; }
   .privacy-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
   .privacy-card a { color: var(--ink); text-underline-offset: 3px; }
@@ -428,7 +451,7 @@
   .info-card-close { border: 0; padding: 0 4px; background: transparent; color: var(--muted); font: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
   .info-card-close:hover { color: var(--ink); }
   footer { margin-top: -8px; padding: 0; text-align: left; font-size: 13px; }
-  footer { display: flex; gap: 16px; }
+  footer { display: flex; flex-wrap: wrap; gap: 8px 16px; }
   footer a, footer button { display: inline-block; padding: 2px 0; border: 0; background: transparent; color: var(--muted); font: inherit; text-decoration: none; text-underline-offset: 3px; cursor: pointer; }
   footer a:hover, footer button:hover { text-decoration: underline; }
 </style>

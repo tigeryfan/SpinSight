@@ -5,3 +5,7 @@ compatibility_date = "2026-09-01"
 [[routes]]
 pattern = "api.spinsight.xyz/v1/machine-report"
 zone_name = "spinsight.xyz"
+
+[[routes]]
+pattern = "api.spinsight.xyz/v1/problem-report"
+zone_name = "spinsight.xyz"
