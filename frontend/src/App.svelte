@@ -27,6 +27,15 @@
   let systemDark = $state(window.matchMedia('(prefers-color-scheme: dark)').matches);
   let turnstileTheme: 'light' | 'dark' = $derived(theme === 'dark' || (theme === 'system' && systemDark) ? 'dark' : 'light');
   let tourStep = $state(-2);
+  let privacyVisible = $state(false);
+  async function showPrivacy(event: MouseEvent) {
+    event.preventDefault();
+    privacyVisible = true;
+    await tick();
+    const card = document.getElementById('privacy');
+    card?.focus({ preventScroll: true });
+    card?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
   let dataRevision = $state(0);
@@ -264,6 +273,13 @@
 </script>
 
 <svelte:head><title>SpinSight · {dorm}</title></svelte:head>
+{#snippet privacyCard()}
+  <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1">
+    <h2 id="privacy-title">Your privacy</h2>
+    <p>SpinSight collects no personally identifiable information (PII) and cannot track whose laundry is in a machine. Machine status comes from a public API.</p>
+    <p>The project is 100% public. <a href="https://github.com/tigeryfan/SpinSight">View the source on GitHub</a>.</p>
+  </section>
+{/snippet}
 <a class="skip-link" href="#machines">Skip to machines</a>
 <main class="wrap">
   <header>
@@ -308,6 +324,7 @@
   {:else if tourStep >= 0 && tourStep < 3}
     <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
+  {#if privacyVisible && (tourStep !== 3 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
   {#if isUnassignedDorm(dorm)}
@@ -326,6 +343,7 @@
     {/each}
   </section>
   {#if tourStep === 3}<TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(2)} close={closeTour} />{/if}
+  {#if privacyVisible && tourStep === 3}{@render privacyCard()}{/if}
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
       <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
@@ -359,4 +377,13 @@
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
   {/if}
+  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a></footer>
 </main>
+
+<style>
+  .privacy-card { scroll-margin-top: 16px; }
+  .privacy-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
+  .privacy-card a, footer a { color: var(--ink); text-underline-offset: 3px; }
+  footer { padding: 8px 0 16px; text-align: center; font-size: 13px; }
+  footer a { display: inline-block; padding: 12px; }
+</style>
