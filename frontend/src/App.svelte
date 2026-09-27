@@ -309,7 +309,9 @@
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
         {:else if snapshot?.refreshedAt}
-          <span class="update-label">Updated</span>{' '}<span class="update-date">{snapshot.refreshedAt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+          {@const updatedDate = snapshot.refreshedAt.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+          {@const updatedTime = snapshot.refreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+          <span class="update-label">Updated</span>{' '}<span class="update-date"><span class="date-part">{updatedDate} at</span> <span>{updatedTime}</span></span>
         {:else if snapshot}
           <span>No readings yet</span>
         {/if}

@@ -10,6 +10,13 @@
   let status = $derived(machine.estimatedComplete ? 'Available' : machine.status === 'Running'
     ? machine.minutesLeft === null ? 'Running · time unknown' : `${machine.minutesLeft}m left`
     : machine.status === 'Completed' ? 'Available' : machine.status);
+  const formatDateTime = (value: string) => {
+    const date = new Date(value);
+    return {
+      date: date.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      time: date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+    };
+  };
 </script>
 
 <div class="machine" class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running' && !machine.estimatedComplete} class:completed={machine.status === 'Completed' || machine.estimatedComplete} class:expanded class:dismissed>
@@ -32,7 +39,7 @@
     <dl>
       <div><dt>Last Mon–Sun usage</dt><dd>{machine.usageHoursPastWeek === null ? 'No readings' : `${machine.usageHoursPastWeek.toFixed(1)}h`}</dd></div>
       <div><dt>Usage rank</dt><dd>{ranking ? `#${ranking.rank} of ${ranking.total}` : 'No readings'}</dd></div>
-      {#if machine.estimatedCompletionTime && machine.status === 'Running'}<div><dt>Estimated finish</dt><dd>{new Date(machine.estimatedCompletionTime).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</dd></div>{/if}
+      {#if machine.estimatedCompletionTime && machine.status === 'Running'}{@const finish = formatDateTime(machine.estimatedCompletionTime)}<div><dt>Estimated finish</dt><dd><span class="date-part">{finish.date} at</span> <span>{finish.time}</span></dd></div>{/if}
       {#if machine.topOffAvailable}<div class="extra"><dt>Top off</dt><dd>Available</dd></div>{/if}
     </dl>
   </div>
@@ -58,6 +65,7 @@
   dl div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
   dt { opacity: .8; }
   dd { margin: 0; }
+  .date-part { white-space: nowrap; }
   .extra { border-top: 1px solid transparent; margin-top: 5px; padding-top: 8px; }
   @media (max-width: 760px) {
     .machine-button { flex-direction: column; align-items: flex-start; padding: 12px 10px; }
