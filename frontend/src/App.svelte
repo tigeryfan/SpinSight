@@ -48,7 +48,7 @@
     card?.scrollIntoView({ block: 'start', behavior: 'instant' });
   }
   let whyNoLaundryVisible = $state(false);
-  const whyNoLaundryText = 'Cycles run without payment aren’t recorded.';
+  const whyNoLaundryText = 'Cycles run without payment are not tracked because they do not exist in the Greenwald system.';
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
   let dataRevision = $state(0);
