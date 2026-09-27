@@ -321,7 +321,8 @@
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
-    <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
+    <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t know whose laundry is in a machine.</p>
+    <p>When you send a report, its contents, selected dorm, page URL, browser details, language, window size, receipt time, and Turnstile verification details are sent to the maintainer through Telegram for troubleshooting.</p>
     <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
   </section>
 {/snippet}

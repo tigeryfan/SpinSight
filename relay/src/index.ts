@@ -35,7 +35,7 @@ export default {
     let body: Record<string, unknown>;
     try {
       const raw = await request.text();
-      if (raw.length > 4096) return response({ error: 'Report is too long.' }, 413, headers);
+      if (raw.length > 16384) return response({ error: 'Report is too long.' }, 413, headers);
       body = JSON.parse(raw) as Record<string, unknown>;
     } catch {
       return response({ error: 'Invalid report.' }, 400, headers);
@@ -60,10 +60,24 @@ export default {
       if (!check.ok || result.success !== true || result.action !== (problem ? 'problem_report' : 'machine_report') || result.hostname !== 'spinsight.xyz') {
         return response({ error: 'Verification failed. Please try again.' }, 403, headers);
       }
+      const diagnostics = body.diagnostics && typeof body.diagnostics === 'object' && !Array.isArray(body.diagnostics)
+        ? body.diagnostics as Record<string, unknown> : {};
+      const field = (value: unknown, limit: number) => typeof value === 'string' && value.trim()
+        ? value.replace(/[\r\n\t]/g, ' ').slice(0, limit) : 'Not provided';
+      const details = [
+        `Page: ${field(diagnostics.page, 700)}`,
+        `UA: ${field(diagnostics.userAgent ?? request.headers.get('User-Agent'), 400)}`,
+        `Language: ${field(diagnostics.language, 40)}`,
+        `Viewport: ${field(diagnostics.viewport, 40)}`,
+        `Received: ${new Date().toISOString()}`,
+        `Turnstile: verified`,
+        `Turnstile action: ${result.action}`,
+        `Turnstile hostname: ${result.hostname}`,
+      ].join('\n');
       const sent = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: `SpinSight ${problem ? 'problem report' : 'machine IDs'} for ${dorm}\n\n${content}` }),
+        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: `SpinSight ${problem ? 'problem report' : 'machine IDs'} for ${dorm}\n\n${content}\n\nDiagnostics\n${details}` }),
         signal: AbortSignal.timeout(10_000),
       });
       const telegram = await sent.json() as { ok?: boolean };

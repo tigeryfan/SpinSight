@@ -56,7 +56,15 @@ export async function sendReport(dorm: string, content: string, token: string, p
   const response = await fetch(apiUrl(problem ? 'problem-report' : 'machine-report'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dorm, ...(problem ? { description: content } : { machineIds: content }), token }),
+    body: JSON.stringify({
+      dorm, ...(problem ? { description: content } : { machineIds: content }), token,
+      diagnostics: {
+        page: window.location.href.slice(0, 700),
+        userAgent: navigator.userAgent.slice(0, 400),
+        language: navigator.language.slice(0, 40),
+        viewport: `${window.innerWidth} × ${window.innerHeight}`,
+      },
+    }),
   });
   if (!response.ok) throw new Error(`Report failed (${response.status}).`);
 }
