@@ -53,7 +53,10 @@ function cycleDuration(type: string | null): number | null {
 }
 
 export async function sendReport(dorm: string, content: string, token: string, problem = false): Promise<void> {
-  const response = await fetch(apiUrl(problem ? 'problem-report' : 'machine-report'), {
+  const debug = new URLSearchParams(window.location.search).has('debug');
+  const url = apiUrl(problem ? 'problem-report' : 'machine-report');
+  if (debug) url.searchParams.set('debug', '');
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -75,7 +78,7 @@ export async function sendReport(dorm: string, content: string, token: string, p
         detail = parsed.error;
       }
     } catch { /* Keep non-JSON error responses as text. */ }
-    throw new Error(`Report failed (${response.status})${detail ? `: ${detail}` : '.'}`);
+    throw new Error(`Report failed (${response.status})${detail ? `: ${detail}` : '.'}${debug ? `\nBrowser request: ${url.href}` : ''}`);
   }
 }
 

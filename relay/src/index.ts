@@ -31,7 +31,31 @@ export default {
       'Access-Control-Allow-Headers': 'Content-Type',
       'Vary': 'Origin, Sec-Fetch-Site',
     });
-    if (origin !== allowedOrigin && !reportWithoutOrigin) return response({ error: 'Forbidden origin.' }, 403, headers);
+    if (origin !== allowedOrigin && !reportWithoutOrigin) {
+      let error = 'Forbidden origin.';
+      if (url.searchParams.has('debug')) {
+        const display = (value: string | null) => value === null ? '(absent)' : JSON.stringify(value);
+        const failedFallbackChecks = [
+          origin !== null && origin !== 'null' ? 'Origin must be absent or the literal "null"' : '',
+          fetchSite !== null && fetchSite !== 'same-origin' ? 'Sec-Fetch-Site must be absent or "same-origin"' : '',
+          url.origin !== allowedOrigin ? `Destination origin must be ${allowedOrigin}` : '',
+          request.method !== 'POST' ? 'Method must be POST' : '',
+          contentType !== 'application/json' ? 'Content-Type must be application/json' : '',
+        ].filter(Boolean);
+        error += '\n' + [
+          'Relay origin diagnostics:',
+          `Expected Origin: ${allowedOrigin}`,
+          `Received Origin: ${display(origin)}`,
+          `Received Sec-Fetch-Site: ${display(fetchSite)}`,
+          `Received Content-Type: ${display(request.headers.get('Content-Type'))}`,
+          `Received method: ${request.method}`,
+          `Relay destination: ${url.origin}${url.pathname}`,
+          'Origin did not match the allowed origin.',
+          ...failedFallbackChecks.map(check => `Fallback failed: ${check}`),
+        ].join('\n');
+      }
+      return response({ error }, 403, headers);
+    }
     if (origin === allowedOrigin) headers.set('Access-Control-Allow-Origin', allowedOrigin);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     if (request.method !== 'POST') return response({ error: 'Use POST.' }, 405, headers);
