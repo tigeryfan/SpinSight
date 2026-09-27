@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import DormPicker from './components/DormPicker.svelte';
+  import SelectMenu from './components/SelectMenu.svelte';
   import Icon from './components/Icon.svelte';
   import MachineCard from './components/MachineCard.svelte';
   import MachineReport from './components/MachineReport.svelte';
@@ -49,6 +50,12 @@
   let storedMachines = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let filtered = $derived(deriveMachines(storedMachines, now));
   let machineSort = $state('name-asc');
+  const machineSortOptions = [
+    { value: 'name-asc', label: 'Name A-Z' },
+    { value: 'name-desc', label: 'Name Z-A' },
+    { value: 'usage-desc', label: 'Usage High-Low' },
+    { value: 'usage-asc', label: 'Usage Low-High' },
+  ];
   let sortedMachines = $derived([...filtered].sort(compareMachines));
   function compareMachines(a: Machine, b: Machine) {
     const byName = a.machineName.localeCompare(b.machineName, undefined, { numeric: true });
@@ -330,14 +337,10 @@
     <div class="machines-heading">
       <h2 id="machines-title">Machines</h2>
       <span class="machine-count">{filtered.length} machines</span>
-      <label class="machine-sort">Sort by
-        <select bind:value={machineSort}>
-          <option value="name-asc">Name A-Z</option>
-          <option value="name-desc">Name Z-A</option>
-          <option value="usage-desc">Usage High-Low</option>
-          <option value="usage-asc">Usage Low-High</option>
-        </select>
-      </label>
+      <div class="machine-sort">
+        <span aria-hidden="true">Sort by</span>
+        <SelectMenu bind:value={machineSort} options={machineSortOptions} label="Sort by" id="machine-sort-menu" />
+      </div>
     </div>
     {#if snapshot && filtered.length}
       <div class="grid">
