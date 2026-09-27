@@ -36,6 +36,16 @@
     card?.focus({ preventScroll: true });
     card?.scrollIntoView({ block: 'start', behavior: 'instant' });
   }
+  async function showWhyNoLaundry(event: MouseEvent) {
+    event.preventDefault();
+    whyNoLaundryVisible = true;
+    await tick();
+    const card = document.getElementById('why-no-laundry');
+    card?.focus({ preventScroll: true });
+    card?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
+  let whyNoLaundryVisible = $state(false);
+  const whyNoLaundryText = 'Cycles run without payment aren’t recorded.';
   let dorm = $state('All Dorms');
   let snapshot = $state<Snapshot | null>(null);
   let dataRevision = $state(0);
@@ -238,7 +248,7 @@
     tourStep = -2;
   }
   function nextTourStep() {
-    if (tourStep === 3) closeTour();
+    if (tourStep === 5) closeTour();
     else void showTourStep(tourStep + 1);
   }
   onMount(() => {
@@ -278,6 +288,12 @@
     <h2 id="privacy-title">Privacy</h2>
     <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
     <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
+  </section>
+{/snippet}
+{#snippet whyNoLaundryCard()}
+  <section class="panel why-no-laundry" id="why-no-laundry" aria-labelledby="why-no-laundry-title" tabindex="-1">
+    <h2 id="why-no-laundry-title">Why are some cycles missing?</h2>
+    <p>{whyNoLaundryText}</p>
   </section>
 {/snippet}
 <a class="skip-link" href="#machines">Skip to machines</a>
@@ -322,10 +338,11 @@
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
       <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
     </section>
-  {:else if tourStep >= 0 && tourStep <= 3}
+  {:else if tourStep >= 0 && tourStep <= 5}
     <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
-  {#if privacyVisible && (tourStep !== 3 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
+  {#if privacyVisible && (tourStep !== 5 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
+  {#if whyNoLaundryVisible}{@render whyNoLaundryCard()}{/if}
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert"><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
   {#if isUnassignedDorm(dorm)}
@@ -343,7 +360,7 @@
       <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}{#if item.data.total > 0 && item.data.available === item.data.total}<span class="all-available">All available</span>{:else}<span class="sub">{item.data.total ? 'Time unknown' : 'No machines'}</span>{/if}{/if}</div></div>
     {/each}
   </section>
-  {#if privacyVisible && tourStep === 3}{@render privacyCard()}{/if}
+  {#if tourStep === 5}{@render privacyCard()}{/if}
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
       <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
@@ -377,14 +394,17 @@
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
   {/if}
-  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a></footer>
+  <footer><a href="#privacy" onclick={showPrivacy}>How is my privacy protected?</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Why is some data missing?</a></footer>
 </main>
 
 <style>
   .privacy-card { scroll-margin-top: 16px; }
   .privacy-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
   .privacy-card a { color: var(--ink); text-underline-offset: 3px; }
+  .why-no-laundry { margin-top: 12px; }
+  .why-no-laundry p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
   footer { margin-top: -8px; padding: 0; text-align: left; font-size: 13px; }
+  footer { display: flex; gap: 16px; }
   footer a { display: inline-block; padding: 2px 0; color: var(--muted); text-decoration: none; text-underline-offset: 3px; }
   footer a:hover { text-decoration: underline; }
 </style>

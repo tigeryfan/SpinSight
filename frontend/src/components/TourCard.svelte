@@ -6,11 +6,14 @@
     close: () => void;
   } = $props();
 
+  const whyNoLaundryText = 'Cycles run without payment aren’t recorded.';
   const steps = [
     { title: 'Get fresh machine status', text: 'Use this button to fetch the latest washer and dryer readings.' },
     { title: 'Light, dark, or auto', text: 'This button cycles through the themes. Auto follows your device setting.' },
     { title: 'See your dorm', text: 'Choose a dorm to narrow the machines and usage chart. All Dorms shows everything.' },
     { title: 'Explore usage by day', text: 'Choose Week for last week’s daily peaks, or pick a day to see its readings.' },
+    { title: 'Why are some cycles missing?', text: whyNoLaundryText },
+    { title: 'Your privacy', text: 'SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine. The entire project is public on GitHub.' },
   ];
 </script>
 
