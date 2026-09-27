@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { cardTransition } from '../lib/transitions';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from '../lib/turnstile';
 
   let { solved, debug, theme }: { solved: (token: string) => Promise<boolean>; debug: boolean; theme: 'light' | 'dark' } = $props();
@@ -60,7 +61,7 @@
   });
 </script>
 
-<section class="challenge-card" aria-labelledby="challenge-title">
+<section class="challenge-card" aria-labelledby="challenge-title" in:cardTransition|global>
   <div class="challenge-copy"><h2 id="challenge-title" tabindex="-1">Verify to refresh</h2><p>Complete this check to get the latest machine status.</p></div>
   <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
   {#if message}<div class="challenge-error" role="alert"><span>{message}</span><button onclick={() => void renderWidget()}>Try again</button></div>{/if}
