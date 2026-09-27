@@ -1,8 +1,12 @@
 {
   "name": "spinsight-frontend",
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-09-21",
+  "services": [{ "binding": "API", "service": "spinsight-scraper" }],
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   }
 }

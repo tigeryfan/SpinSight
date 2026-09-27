@@ -40,16 +40,21 @@ interface DashboardResponse {
   refreshedAt: string | null;
 }
 
-const apiBase = import.meta.env?.VITE_API_BASE_URL || 'https://api.spinsight.xyz';
+const reportApiBase = import.meta.env?.VITE_API_BASE_URL || 'https://api.spinsight.xyz';
+const dashboardBase = import.meta.env?.VITE_API_BASE_URL || (import.meta.env.PROD ? `${window.location.origin}/api` : reportApiBase);
 const minute = 60_000;
 const cycleMinutes = { Washer: 37, Dryer: 45 };
+
+function dashboardUrl(path: string): URL {
+  return new URL(`${dashboardBase.replace(/\/$/, '')}/v1/${path}`);
+}
 
 function cycleDuration(type: string | null): number | null {
   return type === 'Washer' || type === 'Dryer' ? cycleMinutes[type] * minute : null;
 }
 
 export async function sendReport(dorm: string, content: string, token: string, problem = false): Promise<void> {
-  const response = await fetch(new URL(problem ? '/v1/problem-report' : '/v1/machine-report', apiBase), {
+  const response = await fetch(new URL(problem ? '/v1/problem-report' : '/v1/machine-report', reportApiBase), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dorm, ...(problem ? { description: content } : { machineIds: content }), token }),
@@ -71,7 +76,7 @@ async function requestJson(url: URL): Promise<unknown> {
 
 export async function probeDashboardConnection(): Promise<number> {
   // An omitted date range returns a small HTTP 400 response from the API.
-  const response = await fetch(new URL('/v1/dashboard', apiBase), { method: 'GET', cache: 'no-store', credentials: 'omit' });
+  const response = await fetch(dashboardUrl('dashboard'), { method: 'GET', cache: 'no-store', credentials: 'omit' });
   return response.status;
 }
 
@@ -150,7 +155,7 @@ function observedHours(history: MachineSnapshot[], dates: Date[]): Map<string, n
 
 export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   const dates = lastFullWeek(now);
-  const url = new URL('/v1/dashboard', apiBase);
+  const url = dashboardUrl('dashboard');
   url.searchParams.set('start', dates[0].toISOString());
   // Include cycles observed after midnight that may have started during Sunday.
   url.searchParams.set('end', new Date(weekEnd(dates).getTime() + Math.max(...Object.values(cycleMinutes)) * minute).toISOString());
@@ -196,7 +201,7 @@ export class ChallengeRequiredError extends Error {
 export class VerificationFailedError extends Error {}
 
 export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date): Promise<Snapshot> {
-  const response = await fetch(new URL('/v1/scrape', apiBase), {
+  const response = await fetch(dashboardUrl('scrape'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, mode }),
