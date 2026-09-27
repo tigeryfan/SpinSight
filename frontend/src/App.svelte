@@ -451,8 +451,8 @@
   .info-card-heading h2 { margin: 0; }
   .info-card-close { border: 0; padding: 0 4px; background: transparent; color: var(--muted); font: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
   .info-card-close:hover { color: var(--ink); }
-  footer { margin-top: -8px; padding: 0; text-align: left; font-size: 13px; }
-  footer { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  footer { margin-top: -8px; padding: 0; text-align: center; font-size: 13px; }
+  footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; }
   footer a, footer button { display: inline-block; padding: 2px 0; border: 0; background: transparent; color: var(--muted); font: inherit; text-decoration: none; text-underline-offset: 3px; cursor: pointer; }
   footer a:hover, footer button:hover { text-decoration: underline; }
 </style>
