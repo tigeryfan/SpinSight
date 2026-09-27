@@ -1,0 +1,7 @@
+name = "spinsight-telegram-relay"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+[[routes]]
+pattern = "api.spinsight.xyz/v1/machine-report"
+zone_name = "spinsight.xyz"
