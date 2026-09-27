@@ -101,6 +101,9 @@
   function debugAlert(message: string) {
     if (debugTurnstile) window.alert(`Turnstile debug\n\n${message}`);
   }
+  function errorMessage(cause: unknown): string {
+    return cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
+  }
 
   function receiveBackgroundToken(token: string | null) {
     backgroundToken = token;
@@ -130,7 +133,10 @@
           debugAlert('Background token expired. The background check is restarting.');
         },
       });
-    } catch { receiveBackgroundToken(null); debugAlert('Background check could not load. Refresh will open the visible challenge card.'); }
+    } catch (cause) {
+      receiveBackgroundToken(null);
+      debugAlert(`Background check could not load: ${errorMessage(cause)}`);
+    }
   }
   $effect(() => {
     turnstileTheme;
@@ -175,8 +181,8 @@
     loading = true; error = '';
     try {
       applySnapshot(await loadSnapshot());
-    } catch {
-      error = 'Could not load machine data. Please try again.';
+    } catch (cause) {
+      error = debugTurnstile ? errorMessage(cause) : 'Could not load machine data. Please try again.';
       announcement = '';
     } finally { loading = false; requestPending = false; }
   }
@@ -205,8 +211,8 @@
         return;
       }
       resetBackgroundCheck();
-      debugAlert('Refresh failed after the background token was submitted. The Turnstile server result could not be confirmed.');
-      error = 'Could not refresh the machines. Please try again.';
+      debugAlert(`Refresh failed after the background token was submitted: ${errorMessage(cause)}`);
+      error = debugTurnstile ? errorMessage(cause) : 'Could not refresh the machines. Please try again.';
       finishRefresh();
     }
   }
@@ -224,8 +230,8 @@
       return true;
     } catch (cause) {
       debugAlert(cause instanceof VerificationFailedError
-        ? 'Visible challenge token was rejected by the Worker. The card remains open for another try.'
-        : 'Refresh failed after the visible challenge token was submitted. The Turnstile server result could not be confirmed.');
+        ? `Visible challenge token was rejected by the Worker: ${errorMessage(cause)}`
+        : `Refresh failed after the visible challenge token was submitted: ${errorMessage(cause)}`);
       return false;
     }
   }
