@@ -30,6 +30,7 @@
   let privacyVisible = $state(false);
   async function showPrivacy(event: MouseEvent) {
     event.preventDefault();
+    whyNoLaundryVisible = false;
     privacyVisible = true;
     await tick();
     const card = document.getElementById('privacy');
@@ -38,6 +39,7 @@
   }
   async function showWhyNoLaundry(event: MouseEvent) {
     event.preventDefault();
+    privacyVisible = false;
     whyNoLaundryVisible = true;
     await tick();
     const card = document.getElementById('why-no-laundry');
@@ -285,14 +287,14 @@
 <svelte:head><title>SpinSight · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1">
-    <h2 id="privacy-title">Privacy</h2>
+    <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
     <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
     <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
   </section>
 {/snippet}
 {#snippet whyNoLaundryCard()}
   <section class="panel why-no-laundry" id="why-no-laundry" aria-labelledby="why-no-laundry-title" tabindex="-1">
-    <h2 id="why-no-laundry-title">Why are some cycles missing?</h2>
+    <div class="info-card-heading"><h2 id="why-no-laundry-title">Why are some cycles missing?</h2><button class="info-card-close" aria-label="Close missing data" onclick={() => whyNoLaundryVisible = false}>×</button></div>
     <p>{whyNoLaundryText}</p>
   </section>
 {/snippet}
@@ -394,7 +396,7 @@
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
   {/if}
-  <footer><a href="#privacy" onclick={showPrivacy}>How is my privacy protected?</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Why is some data missing?</a></footer>
+  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a></footer>
 </main>
 
 <style>
@@ -403,6 +405,10 @@
   .privacy-card a { color: var(--ink); text-underline-offset: 3px; }
   .why-no-laundry { margin-top: 12px; }
   .why-no-laundry p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
+  .info-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .info-card-heading h2 { margin: 0; }
+  .info-card-close { border: 0; padding: 0 4px; background: transparent; color: var(--muted); font: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
+  .info-card-close:hover { color: var(--ink); }
   footer { margin-top: -8px; padding: 0; text-align: left; font-size: 13px; }
   footer { display: flex; gap: 16px; }
   footer a { display: inline-block; padding: 2px 0; color: var(--muted); text-decoration: none; text-underline-offset: 3px; }
