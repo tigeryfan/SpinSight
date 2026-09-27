@@ -1,6 +1,7 @@
 export const dorms = ['Alamo', 'Appleby', 'Jameson', 'Jones', 'North Hutch', 'South Hutch', 'Upper Dorms'];
 
 const assignments = [
+  { dorm: 'Alamo', numbers: [5, 6, 7] },
   { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12] },
   { dorm: 'South Hutch', numbers: [1, 2] },
   { dorm: 'North Hutch', numbers: [3, 4] },
