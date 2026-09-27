@@ -11,7 +11,7 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
-  import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
+  import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, probeDashboardConnection, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
   import { dorms, isUnassignedDorm } from './lib/dorms';
@@ -182,7 +182,14 @@
     try {
       applySnapshot(await loadSnapshot());
     } catch (cause) {
-      error = debugTurnstile ? errorMessage(cause) : 'Could not load machine data. Please try again.';
+      if (debugTurnstile) {
+        let probeResult: string;
+        try { probeResult = `HTTP ${await probeDashboardConnection()}`; }
+        catch (probeCause) { probeResult = errorMessage(probeCause); }
+        error = `${errorMessage(cause)}; small API request: ${probeResult}`;
+      } else {
+        error = 'Could not load machine data. Please try again.';
+      }
       announcement = '';
     } finally { loading = false; requestPending = false; }
   }

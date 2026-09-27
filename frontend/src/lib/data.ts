@@ -69,6 +69,12 @@ async function requestJson(url: URL): Promise<unknown> {
   return response.json();
 }
 
+export async function probeDashboardConnection(): Promise<number> {
+  // An omitted date range returns a small HTTP 400 response from the API.
+  const response = await fetch(new URL('/v1/dashboard', apiBase), { method: 'GET', cache: 'no-store', credentials: 'omit' });
+  return response.status;
+}
+
 function isRecord(value: unknown): value is MachineSnapshot {
   if (!value || typeof value !== 'object') return false;
   const row = value as Record<string, unknown>;
