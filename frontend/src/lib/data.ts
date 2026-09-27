@@ -2,8 +2,8 @@ import type { MachineSnapshot } from '../../../worker/src/types';
 import { machineDorm } from './dorms';
 export type { MachineSnapshot } from '../../../worker/src/types';
 
-export const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-export const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+export const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export type MachineType = 'Washer' | 'Dryer';
 
 export interface Machine {
@@ -111,10 +111,10 @@ function isRecord(value: unknown): value is MachineSnapshot {
 }
 
 export function lastFullWeek(now = new Date()): Date[] {
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - 7);
+  const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  sunday.setDate(sunday.getDate() - sunday.getDay() - 7);
   return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(monday);
+    const day = new Date(sunday);
     day.setDate(day.getDate() + index);
     return day;
   });
@@ -177,7 +177,7 @@ export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
   const dates = lastFullWeek(now);
   const url = apiUrl('dashboard');
   url.searchParams.set('start', dates[0].toISOString());
-  // Include cycles observed after midnight that may have started during Sunday.
+  // Include cycles observed after midnight that may have started during Saturday.
   url.searchParams.set('end', new Date(weekEnd(dates).getTime() + Math.max(...Object.values(cycleMinutes)) * minute).toISOString());
   const payload = await requestJson(url) as DashboardResponse;
   if (!payload || !Array.isArray(payload.machines) || !Array.isArray(payload.history)
@@ -372,7 +372,7 @@ export function weeklyUsage(machines: Machine[], history: MachineSnapshot[], dat
     const nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
     return {
-      label: days[(date.getDay() + 6) % 7],
+      label: days[date.getDay()],
       timestamp: (date.getTime() + nextDay.getTime()) / 2,
       ...peak,
     };
