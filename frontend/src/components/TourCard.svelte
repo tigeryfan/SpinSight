@@ -18,7 +18,7 @@
   ];
 </script>
 
-<section class="tour-card" aria-labelledby="tour-title" aria-live="polite" transition:cardTransition|global>
+<section class="tour-card" aria-labelledby="tour-title" aria-live="polite" out:cardTransition|global>
   <div class="tour-copy">
     <h2 id="tour-title" tabindex="-1">{steps[step].title}</h2>
     {#if step === 5}

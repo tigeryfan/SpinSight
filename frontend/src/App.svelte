@@ -18,7 +18,7 @@
 
   type Theme = 'light' | 'dark' | 'system';
   const themes: Theme[] = ['light', 'dark', 'system'];
-  function themeFade(node: Element) {
+  function softFade(node: Element) {
     return fade(node, {
       duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220,
       easing: cubicOut,
@@ -28,6 +28,9 @@
   let systemDark = $state(window.matchMedia('(prefers-color-scheme: dark)').matches);
   let turnstileTheme: 'light' | 'dark' = $derived(theme === 'dark' || (theme === 'system' && systemDark) ? 'dark' : 'light');
   let tourStep = $state(-2);
+  function dismissTourInvite(node: Element) {
+    return tourStep >= 0 ? { duration: 0 } : cardTransition(node);
+  }
   let privacyVisible = $state(false);
   async function showPrivacy(event: MouseEvent) {
     event.preventDefault();
@@ -301,7 +304,7 @@
 {/snippet}
 <a class="skip-link" href="#machines">Skip to machines</a>
 <main class="wrap">
-  {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true"></div>{/if}
+  {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
       <h1>SpinSight</h1>
@@ -325,7 +328,7 @@
       <button class="pill theme-button" class:tour-target={tourStep === 1} aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
         <span class="theme-content" aria-hidden="true">
           {#key theme}
-            <span class="theme-option" transition:themeFade><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
+            <span class="theme-option" transition:softFade><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
           {/key}
         </span>
       </button>
@@ -339,7 +342,7 @@
   <div class="background-verification" bind:this={backgroundContainer}></div>
   {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={turnstileTheme} />{/if}
   {#if tourStep === -1}
-    <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" transition:cardTransition>
+    <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
       <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
     </section>
