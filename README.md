@@ -1,6 +1,6 @@
 # SpinSight
 
-[SpinSight](https://spinsight.xyz) is a dorm laundry dashboard for The Webb Schools that shows washer and dryer availability, estimated finish times, and usage history. Students can filter machines by dorm, see which machine is expected to finish next, and compare activity across weekly and daily charts.
+[SpinSight](https://spinsight.xyz) is a dorm laundry dashboard for The Webb Schools. It shows washer and dryer availability, estimated finish times, and usage history. Students can filter machines by dorm, see which machine is expected to finish next, and compare activity across weekly and daily charts.
 
 ## The problem
 
@@ -15,8 +15,6 @@ SpinSight helps students plan around machine availability by bringing status, es
 The dashboard is built with **Svelte 5**, **TypeScript**, and **Vite**, and configured for hosting through **Cloudflare Workers static assets**. It presents availability summaries, individual machine cards, and usage charts, with light, dark, and system themes.
 
 Machine countdowns update every second using stored completion estimates and the device clock. Progress fills estimate whole-cycle progress using 37 minutes for washers and 45 minutes for dryers, so a new reading does not reset progress. These updates happen in the browser without additional API requests.
-
-First-time visitors are offered a short dashboard tour. Their choice is saved in a cookie for one year. Add `?tour` to the dashboard URL to start the tour again at any time.
 
 The weekly chart shows each day's peak running count during the previous full Monday–Sunday week in the device's local timezone. Daily charts show individual readings, with missing observations left blank. Usage hours infer cycle starts from completion estimates using the same 37-minute washer and 45-minute dryer durations. Overlapping intervals are counted once and clipped to the previous full week. Cycles never observed running cannot be counted, and extended cycles may differ from these standard-duration estimates.
 
@@ -34,8 +32,6 @@ The frontend accesses this data through two endpoints.
 Opening the dashboard reads stored data and starts a background Turnstile check. Pressing Refresh calls the scraper endpoint, waits for the database write, and then reloads the dashboard. If background verification fails, a visible Turnstile challenge appears in a card. A fourth refresh attempt within one minute also requires a visible challenge. Every later attempt requires a challenge until that browser goes three minutes without refreshing. The Worker assigns each browser a signed cookie to count separately, including when many students share one public IP address. Greenwald credentials and database access remain in the backend Worker.
 
 Refresh verification uses one Managed Turnstile widget. Its site key is public in the frontend; its secret belongs in the Worker secret binding `TURNSTILE_SECRET`. Apply the Worker D1 migrations before deploying the Worker. `TURNSTILE_HOSTNAMES` in `worker/wrangler.toml` lists accepted frontend hostnames; local development needs local hostnames added in its own environment. The background widget runs with interaction-only appearance. If Cloudflare requests interaction, the dashboard waits until Refresh is clicked and then displays the widget in a card.
-
-Add `?debug` to the dashboard URL to show browser alerts for background and visible Turnstile results, refresh decisions, and the reason a visible challenge was required. Alerts do not show tokens.
 
 ## Project structure
 
