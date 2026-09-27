@@ -55,7 +55,7 @@
       await sendReport(dorm, content.trim(), token, problem);
       sent = true;
       content = '';
-      message = problem ? 'Thanks. Your problem report was sent.' : 'Thanks. Your machine IDs were sent.';
+      message = 'Your report was submitted.';
     } catch {
       message = 'Could not send the report. Please try again.';
     } finally {
