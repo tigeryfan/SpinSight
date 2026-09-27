@@ -401,7 +401,7 @@
     {:else}<p class="empty">{loading ? 'Loading machines…' : snapshot ? 'No machines found for this dorm.' : 'Machine data is unavailable. Try refreshing.'}</p>{/if}
   </section>
   {/if}
-  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a></footer>
+  <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button></footer>
 </main>
 
 <style>
@@ -416,6 +416,6 @@
   .info-card-close:hover { color: var(--ink); }
   footer { margin-top: -8px; padding: 0; text-align: left; font-size: 13px; }
   footer { display: flex; gap: 16px; }
-  footer a { display: inline-block; padding: 2px 0; color: var(--muted); text-decoration: none; text-underline-offset: 3px; }
-  footer a:hover { text-decoration: underline; }
+  footer a, footer button { display: inline-block; padding: 2px 0; border: 0; background: transparent; color: var(--muted); font: inherit; text-decoration: none; text-underline-offset: 3px; cursor: pointer; }
+  footer a:hover, footer button:hover { text-decoration: underline; }
 </style>
