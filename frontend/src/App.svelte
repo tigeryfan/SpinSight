@@ -275,9 +275,9 @@
 <svelte:head><title>SpinSight · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1">
-    <h2 id="privacy-title">Your privacy</h2>
-    <p>SpinSight collects no personally identifiable information (PII) and cannot track whose laundry is in a machine. Machine status comes from a public API.</p>
-    <p>The project is 100% public. <a href="https://github.com/tigeryfan/SpinSight">View the source on GitHub</a>.</p>
+    <h2 id="privacy-title">Privacy</h2>
+    <p>SpinSight uses the public laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
+    <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
   </section>
 {/snippet}
 <a class="skip-link" href="#machines">Skip to machines</a>
@@ -383,7 +383,8 @@
 <style>
   .privacy-card { scroll-margin-top: 16px; }
   .privacy-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
-  .privacy-card a, footer a { color: var(--ink); text-underline-offset: 3px; }
-  footer { padding: 8px 0 16px; text-align: center; font-size: 13px; }
-  footer a { display: inline-block; padding: 12px; }
+  .privacy-card a { color: var(--ink); text-underline-offset: 3px; }
+  footer { padding: 0; text-align: left; font-size: 13px; }
+  footer a { display: inline-block; padding: 2px 0; color: var(--muted); text-decoration: none; text-underline-offset: 3px; }
+  footer a:hover { text-decoration: underline; }
 </style>
