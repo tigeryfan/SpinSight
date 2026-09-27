@@ -29,8 +29,8 @@ The data Worker exposes two endpoints.
 
 A separate relay Worker accepts reports from the dashboard. Both endpoints verify a Turnstile token to prevent abuse.
 
-- `POST /v1/machine-report` accepts `dorm`, `machineIds`, and `token` to submit machine IDs for Appleby, Jameson, or Jones.
-- `POST /v1/problem-report` accepts `dorm`, `description`, and `token` to report a problem. It also accepts optional browser `diagnostics`.
+- `POST /v1/machine-report` accepts `dorm`, `machineIds`, and `token` to submit machine IDs for machines yet assigned to dorms.
+- `POST /v1/problem-report` accepts `dorm`, `description`, and `token` to report a problem. It also accepts browser `diagnostics`.
 
 Opening the dashboard reads stored data and starts a background Turnstile check. Rate-limiting is applied. Credential secrets and database access remain in the background Worker.
 
