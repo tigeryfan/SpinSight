@@ -16,17 +16,22 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin');
     const url = new URL(request.url);
-    // Same-origin requests can reach the service binding without a usable Origin.
-    const sameOriginRequest = (origin === null || origin === 'null')
-      && request.headers.get('Sec-Fetch-Site') === 'same-origin'
-      && url.origin === allowedOrigin;
+    const fetchSite = request.headers.get('Sec-Fetch-Site');
+    const contentType = request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+    // Permit missing browser metadata only for JSON POSTs to our production host.
+    // Cross-origin JSON requires a preflight, which still requires an allowed Origin.
+    const reportWithoutOrigin = (origin === null || origin === 'null')
+      && (fetchSite === null || fetchSite === 'same-origin')
+      && url.origin === allowedOrigin
+      && request.method === 'POST'
+      && contentType === 'application/json';
     const headers = new Headers({
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Vary': 'Origin, Sec-Fetch-Site',
     });
-    if (origin !== allowedOrigin && !sameOriginRequest) return response({ error: 'Forbidden origin.' }, 403, headers);
+    if (origin !== allowedOrigin && !reportWithoutOrigin) return response({ error: 'Forbidden origin.' }, 403, headers);
     if (origin === allowedOrigin) headers.set('Access-Control-Allow-Origin', allowedOrigin);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     if (request.method !== 'POST') return response({ error: 'Use POST.' }, 405, headers);
