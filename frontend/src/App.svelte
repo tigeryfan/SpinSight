@@ -344,9 +344,9 @@
       <div class="tour-invite-actions"><button class="pill" onclick={closeTour}>No thanks</button><button class="pill tour-start" onclick={startTour}>Start tour</button></div>
     </section>
   {:else if tourStep >= 0 && tourStep <= 5}
-    <TourCard step={tourStep} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
+    <TourCard step={tourStep} {whyNoLaundryText} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
-  {#if privacyVisible && (tourStep !== 5 || isUnassignedDorm(dorm))}{@render privacyCard()}{/if}
+  {#if privacyVisible}{@render privacyCard()}{/if}
   {#if whyNoLaundryVisible}{@render whyNoLaundryCard()}{/if}
   <p class="sr-only" role="status">{announcement}</p>
   {#if error}<div class="error" role="alert" transition:cardTransition><span>{error}</span><button class="text-button" disabled={loading} onclick={() => retryRefresh ? refreshDashboard() : readData()}>Try again</button></div>{/if}
@@ -365,7 +365,6 @@
       <div class="stat"><div class="label">{item.label}</div><div class="value">{#if !snapshot}—{:else if item.data.next}{item.data.next.machineName} <span class="sub">in {item.data.next.minutesLeft}m</span>{:else}{#if item.data.total > 0 && item.data.available === item.data.total}<span class="all-available">All available</span>{:else}<span class="sub">{item.data.total ? 'Time unknown' : 'No machines'}</span>{/if}{/if}</div></div>
     {/each}
   </section>
-  {#if tourStep === 5}{@render privacyCard()}{/if}
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
       <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />

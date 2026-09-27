@@ -1,27 +1,30 @@
 <script lang="ts">
   import { cardTransition } from '../lib/transitions';
-  let { step, next, back, close }: {
+  let { step, next, back, close, whyNoLaundryText }: {
     step: number;
     next: () => void;
     back: () => void;
     close: () => void;
+    whyNoLaundryText: string;
   } = $props();
 
-  const whyNoLaundryText = 'Cycles run without payment aren’t recorded.';
   const steps = [
     { title: 'Get fresh machine status', text: 'Use this button to fetch the latest washer and dryer readings.' },
     { title: 'Light, dark, or auto', text: 'This button cycles through the themes. Auto follows your device setting.' },
     { title: 'See your dorm', text: 'Choose a dorm to narrow the machines and usage chart. All Dorms shows everything.' },
     { title: 'Explore usage by day', text: 'Choose Week for last week’s daily peaks, or pick a day to see its readings.' },
-    { title: 'Why are some cycles missing?', text: whyNoLaundryText },
-    { title: 'Your privacy', text: 'SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine. The entire project is public on GitHub.' },
+    { title: 'Why are some cycles missing?', text: '' },
+    { title: 'Your privacy', text: '' },
   ];
 </script>
 
 <section class="tour-card" aria-labelledby="tour-title" aria-live="polite" transition:cardTransition|global>
   <div class="tour-copy">
     <h2 id="tour-title" tabindex="-1">{steps[step].title}</h2>
-    <p>{steps[step].text}</p>
+    {#if step === 5}
+      <p>SpinSight uses the Greenwald laundry API to show machine status. It doesn’t collect personal information or know whose laundry is in a machine.</p>
+      <p>The entire project is <a href="https://github.com/tigeryfan/SpinSight">public on GitHub</a>.</p>
+    {:else}<p>{step === 4 ? whyNoLaundryText : steps[step].text}</p>{/if}
   </div>
   <div class="tour-actions">
     <button class="tour-secondary" onclick={close}>Skip tour</button>
@@ -33,7 +36,8 @@
 <style>
   .tour-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 20px; margin-bottom: 16px; border: 1px solid var(--accent); border-radius: var(--radius-panel); background: var(--panel); box-shadow: var(--popover-shadow); }
   .tour-copy h2:focus { outline: none; }
-  .tour-copy p { margin: 4px 0 0; color: var(--muted); }
+  .tour-copy p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
+  .tour-copy a { color: var(--ink); text-underline-offset: 3px; }
   .tour-actions { display: flex; align-items: center; gap: 8px; flex: none; }
   button { min-height: 32px; padding: 6px 10px; border: 0; border-radius: var(--radius-control); font-size: 12px; }
   .tour-secondary { background: transparent; color: var(--muted); }
