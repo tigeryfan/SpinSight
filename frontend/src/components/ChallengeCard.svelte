@@ -61,7 +61,7 @@
   });
 </script>
 
-<section class="challenge-card" aria-labelledby="challenge-title" in:cardTransition|global>
+<section class="challenge-card" aria-labelledby="challenge-title" transition:cardTransition|global>
   <div class="challenge-copy"><h2 id="challenge-title" tabindex="-1">Verify to refresh</h2><p>Complete this check to get the latest machine status.</p></div>
   <div class="turnstile-frame"><div class="turnstile-content" bind:this={container}></div></div>
   {#if message}<div class="challenge-error" role="alert"><span>{message}</span><button onclick={() => void renderWidget()}>Try again</button></div>{/if}
