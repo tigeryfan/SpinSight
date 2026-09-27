@@ -8,6 +8,8 @@
   let root: HTMLDivElement;
   let trigger: HTMLButtonElement;
   let menu = $state<HTMLDivElement>();
+  let pointerHold = false;
+  let draggedOption = false;
   let selectedLabel = $derived(options.find(option => option.value === value)?.label ?? value);
 
   function dropdown(node: Element) {
@@ -25,7 +27,19 @@
   }
   function close(restoreFocus = false) {
     open = false;
+    pointerHold = false;
+    draggedOption = false;
     if (restoreFocus) trigger.focus();
+  }
+  function finishPointer(event: PointerEvent) {
+    if (!pointerHold || !open || !menu) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const option = target instanceof Element ? target.closest<HTMLButtonElement>('[role="menuitemradio"]') : null;
+    if (option && menu.contains(option) && draggedOption) {
+      option.click();
+    } else {
+      close(true);
+    }
   }
   function keydown(event: KeyboardEvent) {
     if (event.key === 'Escape') { event.preventDefault(); close(true); }
@@ -41,13 +55,24 @@
   }
 </script>
 
-<svelte:window onpointerdown={(event) => { if (open && !root.contains(event.target as Node)) close(); }} />
+<svelte:window onpointerdown={(event) => { if (open && !root.contains(event.target as Node)) close(); }} onpointermove={(event) => {
+  if (!pointerHold || !open || !menu) return;
+  const target = document.elementFromPoint(event.clientX, event.clientY);
+  const option = target instanceof Element ? target.closest('[role="menuitemradio"]') : null;
+  if (option && menu.contains(option)) draggedOption = true;
+}} onpointerup={finishPointer} onpointercancel={() => { if (pointerHold) close(true); }} />
 <div class="select-menu" bind:this={root} onfocusout={(event) => { if (!root.contains(event.relatedTarget as Node)) close(); }}>
   <button class="pill" bind:this={trigger} aria-label={`${label}: ${selectedLabel}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id}
     onpointerdown={(event) => {
       if (event.button !== 0 || !event.isPrimary) return;
       event.preventDefault();
-      open ? close(true) : show();
+      if (open) {
+        close(true);
+      } else {
+        pointerHold = true;
+        draggedOption = false;
+        show();
+      }
     }}
     onclick={(event) => { if (event.detail === 0) open ? close(true) : show(); }}
     onkeydown={(event) => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); show(); } }}>
