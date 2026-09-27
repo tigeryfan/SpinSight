@@ -97,7 +97,7 @@
       {#each options as option (option.value)}
         <button role="menuitemradio" aria-checked={value === option.value} tabindex="-1" onclick={() => { value = option.value; onSelect?.(option.value); close(true); }}>
           {option.label}
-          {#if value === option.value}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>{/if}
+          {#if value === option.value}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3 3 7-7" /></svg>{/if}
         </button>
       {/each}
     </div>
@@ -112,6 +112,6 @@
   .select-options button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 10px; border: 0; border-radius: max(0px, calc(var(--radius-control) - var(--control-inset) - 1px)); background: transparent; color: var(--ink); text-align: left; }
   .select-options button:hover { background: var(--bg); }
   .select-options button[aria-checked='true'] { background: var(--selected); color: var(--selected-ink); }
-  .select-options svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .select-options svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   @media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }
 </style>
