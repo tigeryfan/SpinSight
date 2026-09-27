@@ -15,17 +15,22 @@ function response(body: object, status: number, headers: Headers): Response {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin');
+    const url = new URL(request.url);
+    // Same-origin requests can reach the service binding without a usable Origin.
+    const sameOriginRequest = (origin === null || origin === 'null')
+      && request.headers.get('Sec-Fetch-Site') === 'same-origin'
+      && url.origin === allowedOrigin;
     const headers = new Headers({
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Vary': 'Origin',
+      'Vary': 'Origin, Sec-Fetch-Site',
     });
-    if (origin !== allowedOrigin) return response({ error: 'Forbidden origin.' }, 403, headers);
-    headers.set('Access-Control-Allow-Origin', allowedOrigin);
+    if (origin !== allowedOrigin && !sameOriginRequest) return response({ error: 'Forbidden origin.' }, 403, headers);
+    if (origin === allowedOrigin) headers.set('Access-Control-Allow-Origin', allowedOrigin);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     if (request.method !== 'POST') return response({ error: 'Use POST.' }, 405, headers);
-    const path = new URL(request.url).pathname;
+    const path = url.pathname;
     const problem = path === '/v1/problem-report';
     if (!problem && path !== '/v1/machine-report') return response({ error: 'Not found.' }, 404, headers);
     if (!env.TURNSTILE_SECRET || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
