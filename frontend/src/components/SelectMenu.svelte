@@ -10,6 +10,7 @@
   let menu = $state<HTMLDivElement>();
   let pointerHold = false;
   let draggedOption = false;
+  let holdTimer: ReturnType<typeof setTimeout> | undefined;
   let selectedLabel = $derived(options.find(option => option.value === value)?.label ?? value);
 
   function dropdown(node: Element) {
@@ -27,12 +28,29 @@
   }
   function close(restoreFocus = false) {
     open = false;
+    if (holdTimer) clearTimeout(holdTimer);
+    holdTimer = undefined;
     pointerHold = false;
     draggedOption = false;
     if (restoreFocus) trigger.focus();
   }
+  function startHold() {
+    pointerHold = true;
+    draggedOption = false;
+    holdTimer = setTimeout(() => {
+      holdTimer = undefined;
+      if (pointerHold) show();
+    }, 180);
+  }
   function finishPointer(event: PointerEvent) {
-    if (!pointerHold || !open || !menu) return;
+    if (!pointerHold) return;
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = undefined;
+      pointerHold = false;
+      return;
+    }
+    if (!open || !menu) return;
     const target = document.elementFromPoint(event.clientX, event.clientY);
     const option = target instanceof Element ? target.closest<HTMLButtonElement>('[role="menuitemradio"]') : null;
     if (option && menu.contains(option) && draggedOption) {
@@ -65,16 +83,12 @@
   <button class="pill" bind:this={trigger} aria-label={`${label}: ${selectedLabel}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id}
     onpointerdown={(event) => {
       if (event.button !== 0 || !event.isPrimary) return;
-      event.preventDefault();
-      if (open) {
-        close(true);
-      } else {
-        pointerHold = true;
-        draggedOption = false;
-        show();
-      }
+      if (!open) startHold();
     }}
-    onclick={(event) => { if (event.detail === 0) open ? close(true) : show(); }}
+    onclick={(event) => {
+      if (event.detail === 0) open ? close(true) : show();
+      else if (!pointerHold) open ? close(true) : show();
+    }}
     onkeydown={(event) => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); show(); } }}>
     <span>{selectedLabel}</span><span class="chevron" class:flipped={open}><Icon name="chevron" /></span>
   </button>
