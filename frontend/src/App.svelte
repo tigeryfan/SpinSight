@@ -334,7 +334,7 @@
       <button class="pill theme-button" class:tour-target={tourStep === 1} aria-label={`Theme: ${theme === 'system' ? 'Auto' : theme}. Switch to ${themes[(themes.indexOf(theme) + 1) % themes.length]}`} title="Cycle light, dark, and system theme" onclick={cycleTheme}>
         <span class="theme-content" aria-hidden="true">
           {#key theme}
-            <span class="theme-option" transition:softFade><Icon name={theme} /><span>{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
+            <span class="theme-option" transition:softFade><Icon name={theme} /><span class="theme-label">{theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}</span></span>
           {/key}
         </span>
       </button>

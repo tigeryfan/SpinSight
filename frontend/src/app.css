@@ -49,7 +49,7 @@ button, a, input { touch-action: manipulation; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 ::selection { color: var(--ink); background: color-mix(in srgb, var(--accent) 25%, var(--panel)); }
 .wrap { max-width: 980px; margin: 0 auto; font-variant-numeric: tabular-nums; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; container-type: inline-size; }
 h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .controls { display: flex; gap: 8px; align-items: center; }
 .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--radius-control); background: var(--panel); color: var(--ink); font-size: 13px; white-space: nowrap; }
@@ -58,6 +58,7 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .theme-button { width: 86px; }
 .theme-content { display: grid; width: 100%; }
 .theme-option { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; }
+.theme-label { display: inline-block; min-width: 0; overflow: hidden; opacity: 1; transform: scaleX(1); transform-origin: left; white-space: nowrap; transition: opacity 120ms ease, transform 180ms ease; }
 .brand { display: grid; gap: 4px; }
 .update-note { font-size: 11px; color: var(--muted); }
 .update-date { white-space: normal; }
@@ -124,9 +125,15 @@ h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
   .tour-invite { align-items: stretch; flex-direction: column; padding: 14px; }
   .tour-invite-actions { justify-content: flex-end; }
 }
+@container (max-width: 360px) {
+  .theme-button { width: 44px; }
+  .theme-option { gap: 0; }
+  .theme-label { flex-shrink: 0; opacity: 0; transform: scaleX(0); }
+}
 @media (max-width: 417px) { .update-label { display: none; } }
 @media (pointer: coarse) { .pill { min-height: 44px; } .icon-pill { width: 44px; } }
 @media (prefers-reduced-motion: reduce) {
   :root { transition: none; }
   .spinning { animation: none; }
+  .theme-label { transition: none; }
 }
