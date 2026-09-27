@@ -3,7 +3,7 @@
   import { cubicOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
-  let { value = $bindable(), options, label, id, onSelect }: { value?: string; options: { value: string; label: string }[]; label: string; id: string; onSelect?: (value: string) => void } = $props();
+  let { value = $bindable(), options, label, id, highlighted = false, onSelect }: { value?: string; options: { value: string; label: string }[]; label: string; id: string; highlighted?: boolean; onSelect?: (value: string) => void } = $props();
   let open = $state(false);
   let root: HTMLDivElement;
   let trigger: HTMLButtonElement;
@@ -80,7 +80,7 @@
   if (option && menu.contains(option)) draggedOption = true;
 }} onpointerup={finishPointer} onpointercancel={() => { if (pointerHold) close(true); }} />
 <div class="select-menu" bind:this={root} onfocusout={(event) => { if (!root.contains(event.relatedTarget as Node)) close(); }}>
-  <button class="pill" bind:this={trigger} aria-label={`${label}: ${selectedLabel}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id}
+  <button class="pill" class:tour-target={highlighted} bind:this={trigger} aria-label={`${label}: ${selectedLabel}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id}
     onpointerdown={(event) => {
       if (event.button !== 0 || !event.isPrimary) return;
       if (!open) startHold();

@@ -332,11 +332,11 @@
           {/key}
         </span>
       </button>
-      <div class:tour-target={tourStep === 2}><DormPicker bind:value={dorm} {dorms} onSelect={(selected) => {
+      <DormPicker bind:value={dorm} {dorms} highlighted={tourStep === 2} onSelect={(selected) => {
         const url = new URL(window.location.href);
         url.searchParams.set('dorm', selected);
         window.history.replaceState(null, '', url);
-      }} /></div>
+      }} />
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
