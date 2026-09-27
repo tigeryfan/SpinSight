@@ -64,7 +64,7 @@ function timestamp(value: string | null): number | null {
 }
 
 async function requestJson(url: URL): Promise<unknown> {
-  const response = await fetch(url, { method: 'GET', cache: 'no-store', credentials: 'include' });
+  const response = await fetch(url, { method: 'GET', cache: 'no-store', credentials: 'omit' });
   if (!response.ok) throw new Error(`Request failed (${response.status}).`);
   return response.json();
 }
