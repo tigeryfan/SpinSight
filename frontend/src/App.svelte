@@ -67,13 +67,14 @@
     await scrollToInfoCard('why-no-laundry');
   }
   async function scrollToInfoCard(id: string) {
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     const card = document.getElementById(id);
-    card?.focus({ preventScroll: true });
-    if (card) {
-      const top = card.getBoundingClientRect().top + window.scrollY - 16;
-      window.scrollTo({ top, behavior: 'instant' });
-    }
+    if (!card) return;
+    await new Promise<void>(resolve => {
+      card.addEventListener('introend', () => resolve(), { once: true });
+      requestAnimationFrame(() => resolve());
+    });
+    card.focus({ preventScroll: true });
+    card.scrollIntoView({ block: 'start', behavior: 'instant' });
   }
   let whyNoLaundryVisible = $state(false);
   const whyNoLaundryText = 'Cycles run without payment are not tracked because they do not exist in the Greenwald system.';
