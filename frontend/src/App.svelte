@@ -446,7 +446,7 @@
 
 <style>
   .brand-home { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; white-space: nowrap; }
-  .brand-logo { width: 1cap; height: 1cap; flex: none; }
+  .brand-logo { width: 1em; height: 1em; flex: none; transform: translateY(.02em); }
   @container brand (max-width: 125px) {
     .brand-logo { display: none; }
   }
