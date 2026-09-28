@@ -40,7 +40,8 @@
   async function showProblem() {
     problemVisible = true;
     await tick();
-    document.getElementById('problem-description')?.focus();
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    document.getElementById('problem-description')?.focus({ preventScroll: true });
   }
   function showAllDorms(event: MouseEvent) {
     event.preventDefault();
@@ -57,24 +58,14 @@
     whyNoLaundryVisible = false;
     privacyVisible = true;
     await tick();
-    await scrollToInfoCard('privacy');
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
   async function showWhyNoLaundry(event: MouseEvent) {
     event.preventDefault();
     privacyVisible = false;
     whyNoLaundryVisible = true;
     await tick();
-    await scrollToInfoCard('why-no-laundry');
-  }
-  async function scrollToInfoCard(id: string) {
-    const card = document.getElementById(id);
-    if (!card) return;
-    await new Promise<void>(resolve => {
-      card.addEventListener('introend', () => resolve(), { once: true });
-      requestAnimationFrame(() => resolve());
-    });
-    card.focus({ preventScroll: true });
-    card.scrollIntoView({ block: 'start', behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
   let whyNoLaundryVisible = $state(false);
   const whyNoLaundryText = 'Cycles run without payment are not tracked because they do not exist in the Greenwald system.';
@@ -286,6 +277,7 @@
     document.querySelector<HTMLElement>('#tour-title')?.focus();
   }
   function startTour() {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     void showTourStep(0);
   }
   function closeTour() {
