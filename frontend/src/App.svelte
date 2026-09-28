@@ -57,18 +57,23 @@
     whyNoLaundryVisible = false;
     privacyVisible = true;
     await tick();
-    const card = document.getElementById('privacy');
-    card?.focus({ preventScroll: true });
-    card?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    await scrollToInfoCard('privacy');
   }
   async function showWhyNoLaundry(event: MouseEvent) {
     event.preventDefault();
     privacyVisible = false;
     whyNoLaundryVisible = true;
     await tick();
-    const card = document.getElementById('why-no-laundry');
+    await scrollToInfoCard('why-no-laundry');
+  }
+  async function scrollToInfoCard(id: string) {
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    const card = document.getElementById(id);
     card?.focus({ preventScroll: true });
-    card?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    if (card) {
+      const top = card.getBoundingClientRect().top + window.scrollY - 16;
+      window.scrollTo({ top, behavior: 'instant' });
+    }
   }
   let whyNoLaundryVisible = $state(false);
   const whyNoLaundryText = 'Cycles run without payment are not tracked because they do not exist in the Greenwald system.';
