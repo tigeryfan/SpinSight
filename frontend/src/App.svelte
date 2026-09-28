@@ -37,10 +37,14 @@
   }
   let privacyVisible = $state(false);
   let problemVisible = $state(false);
+  function scrollToPageEdge(top: number) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top, behavior: reducedMotion ? 'instant' : 'smooth' });
+  }
   async function showProblem() {
     problemVisible = true;
     await tick();
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    scrollToPageEdge(document.documentElement.scrollHeight);
     document.getElementById('problem-description')?.focus({ preventScroll: true });
   }
   function showAllDorms(event: MouseEvent) {
@@ -51,21 +55,21 @@
     url.searchParams.set('dorm', dorm);
     url.hash = '';
     window.history.replaceState(null, '', url);
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    scrollToPageEdge(0);
   }
   async function showPrivacy(event: MouseEvent) {
     event.preventDefault();
     whyNoLaundryVisible = false;
     privacyVisible = true;
     await tick();
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    scrollToPageEdge(0);
   }
   async function showWhyNoLaundry(event: MouseEvent) {
     event.preventDefault();
     privacyVisible = false;
     whyNoLaundryVisible = true;
     await tick();
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    scrollToPageEdge(0);
   }
   let whyNoLaundryVisible = $state(false);
   const whyNoLaundryText = 'Cycles run without payment are not tracked because they do not exist in the Greenwald system.';
@@ -277,7 +281,7 @@
     document.querySelector<HTMLElement>('#tour-title')?.focus();
   }
   function startTour() {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    scrollToPageEdge(0);
     void showTourStep(0);
   }
   function closeTour() {
