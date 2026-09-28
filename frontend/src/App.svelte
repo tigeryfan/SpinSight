@@ -26,7 +26,11 @@
   }
   let theme = $state<Theme>('system');
   let systemDark = $state(window.matchMedia('(prefers-color-scheme: dark)').matches);
-  let turnstileTheme: 'light' | 'dark' = $derived(theme === 'dark' || (theme === 'system' && systemDark) ? 'dark' : 'light');
+  let resolvedTheme: 'light' | 'dark' = $derived(theme === 'dark' || (theme === 'system' && systemDark) ? 'dark' : 'light');
+  $effect(() => {
+    const favicon = document.querySelector<HTMLLinkElement>('#favicon');
+    if (favicon) favicon.href = resolvedTheme === 'dark' ? '/favicon-light.svg' : '/favicon-dark.svg';
+  });
   let tourStep = $state(-2);
   function dismissTourInvite(node: Element) {
     return tourStep >= 0 ? { duration: 0 } : cardTransition(node);
@@ -139,7 +143,7 @@
         sitekey: turnstileSitekey,
         action: 'refresh_background',
         appearance: 'interaction-only',
-        theme: turnstileTheme,
+        theme: resolvedTheme,
         callback: token => { receiveBackgroundToken(token); debugAlert('Background check passed in the browser. A token is ready for Refresh.'); },
         'error-callback': () => { stopBackgroundCheck(); debugAlert('Background check failed. Refresh will open the visible challenge card.'); },
         'before-interactive-callback': () => { stopBackgroundCheck(); debugAlert('Background check needs interaction. Refresh will open the visible challenge card.'); },
@@ -155,7 +159,7 @@
     }
   }
   $effect(() => {
-    turnstileTheme;
+    resolvedTheme;
     if (backgroundWidgetId) {
       stopBackgroundCheck();
       if (!challengeVisible) void prepareBackgroundCheck();
@@ -337,7 +341,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" href="?dorm=All%20Dorms" onclick={showAllDorms}>SpinSight</a></h1>
+      <h1><a class="brand-home" href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -370,7 +374,7 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
-  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={turnstileTheme} />{/if}
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
@@ -387,7 +391,7 @@
     <section class="panel assignment-help" id="machines" aria-labelledby="machines-title" tabindex="-1">
       <h2 id="machines-title">No machines assigned to {dorm} yet</h2>
       <p>We need your help identifying this dorm’s washers and dryers. Enter the machine IDs you see on them.</p>
-      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} debug={debugTurnstile} />{/key}
+      {#key dorm}<MachineReport {dorm} theme={resolvedTheme} debug={debugTurnstile} />{/key}
     </section>
   {:else}
   <section class="stats" aria-label="Machine availability" aria-busy={loading}>
@@ -434,14 +438,18 @@
   {#if problemVisible}
     <section class="panel" id="problem-report" aria-labelledby="problem-title" transition:cardTransition>
       <div class="info-card-heading"><h2 id="problem-title">Report a problem</h2><button class="info-card-close" aria-label="Close problem report" onclick={() => { problemVisible = false; void tick().then(() => document.getElementById('report-problem-button')?.focus()); }}>×</button></div>
-      {#key dorm}<MachineReport {dorm} theme={turnstileTheme} debug={debugTurnstile} problem />{/key}
+      {#key dorm}<MachineReport {dorm} theme={resolvedTheme} debug={debugTurnstile} problem />{/key}
     </section>
   {/if}
   <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button><button id="report-problem-button" type="button" aria-expanded={problemVisible} aria-controls="problem-report" onclick={showProblem}>Report a problem</button></footer>
 </main>
 
 <style>
-  .brand-home { color: inherit; text-decoration: none; }
+  .brand-home { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; white-space: nowrap; }
+  .brand-logo { width: 1cap; height: 1cap; flex: none; }
+  @container brand (max-width: 125px) {
+    .brand-logo { display: none; }
+  }
   .privacy-card { scroll-margin-top: 16px; }
   .privacy-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
   .privacy-card a { color: var(--ink); text-underline-offset: 3px; }

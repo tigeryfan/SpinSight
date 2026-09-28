@@ -6,11 +6,15 @@
     <meta name="description" content="Check dorm laundry availability and explore washer and dryer usage with SpinSight." />
     <meta name="color-scheme" content="light dark" />
     <title>SpinSight</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="/favicon-auto.svg" />
     <script>
       try {
         const savedTheme = document.cookie.split(';').map(cookie => cookie.trim()).find(cookie => cookie.startsWith('spinsight-theme='));
         const theme = savedTheme ? savedTheme.slice('spinsight-theme='.length) : localStorage.getItem('spinsight-theme');
-        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme;
+          document.getElementById('favicon').href = theme === 'dark' ? '/favicon-light.svg' : '/favicon-dark.svg';
+        }
       } catch { /* System theme works when storage is unavailable. */ }
     </script>
   </head>
