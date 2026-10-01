@@ -5,6 +5,7 @@ const assignments = [
   { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12] },
   { dorm: 'South Hutch', numbers: [1, 2] },
   { dorm: 'North Hutch', numbers: [3, 4] },
+  { dorm: 'Appleby', numbers: [18, 19, 20, 21] },
 ];
 
 export function isUnassignedDorm(dorm: string): boolean {
