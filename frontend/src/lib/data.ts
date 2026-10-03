@@ -110,9 +110,11 @@ function isRecord(value: unknown): value is MachineSnapshot {
     && typeof row.top_off_available === 'number';
 }
 
-export function lastFullWeek(now = new Date()): Date[] {
+export function lastFullWeek(now = new Date(), offset = 0): Date[] {
+  // offset = 0 returns the most recent completed week (Sun–Sat before `now`).
+  // Each step past 1 walks another seven days further into the past.
   const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  sunday.setDate(sunday.getDate() - sunday.getDay() - 7);
+  sunday.setDate(sunday.getDate() - sunday.getDay() - 7 - offset * 7);
   return Array.from({ length: 7 }, (_, index) => {
     const day = new Date(sunday);
     day.setDate(day.getDate() + index);
@@ -173,8 +175,8 @@ function observedHours(history: MachineSnapshot[], dates: Date[]): Map<string, n
   return hours;
 }
 
-export async function loadSnapshot(now = new Date()): Promise<Snapshot> {
-  const dates = lastFullWeek(now);
+export async function loadSnapshot(now = new Date(), offset = 0): Promise<Snapshot> {
+  const dates = lastFullWeek(now, offset);
   const url = apiUrl('dashboard');
   url.searchParams.set('start', dates[0].toISOString());
   // Include cycles observed after midnight that may have started during Saturday.
@@ -220,7 +222,7 @@ export class ChallengeRequiredError extends Error {
 }
 export class VerificationFailedError extends Error {}
 
-export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date): Promise<Snapshot> {
+export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date, offset = 0): Promise<Snapshot> {
   const response = await fetch(apiUrl('scrape'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -239,7 +241,7 @@ export async function refreshSnapshot(token: string, mode: 'background' | 'chall
   if (!response.ok) throw new Error(`Refresh failed (${response.status}).`);
   const result = await response.json() as { ok?: boolean } | null;
   if (result?.ok !== true) throw new Error('Refresh did not complete successfully.');
-  return loadSnapshot(now);
+  return loadSnapshot(now, offset);
 }
 
 export function deriveMachines(machines: Machine[], now: number): Machine[] {

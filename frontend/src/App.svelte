@@ -83,6 +83,8 @@
   let now = $state(Date.now());
   let requestPending = false;
   let retryRefresh = false;
+  let weekOffset = $state(0);
+  let weekPending = $state(false);
   let challengeVisible = $state(false);
   let debugTurnstile = $state(false);
   let backgroundToken: string | null = null;
@@ -201,7 +203,7 @@
     retryRefresh = false;
     loading = true; error = '';
     try {
-      applySnapshot(await loadSnapshot());
+      applySnapshot(await loadSnapshot(new Date(), weekOffset));
     } catch (cause) {
       if (debugTurnstile) {
         let probeResult: string;
@@ -223,7 +225,7 @@
     startRefreshSpin();
     const token = await takeBackgroundToken();
     try {
-      applySnapshot(await refreshSnapshot(token ?? '', 'background'));
+      applySnapshot(await refreshSnapshot(token ?? '', 'background', undefined, weekOffset));
       debugAlert('Refresh allowed. The Worker verified the background token, and this browser has no active rapid-refresh challenge window. No visible challenge was needed.');
       resetBackgroundCheck();
       finishRefresh();
@@ -250,7 +252,7 @@
     error = '';
     startRefreshSpin();
     try {
-      applySnapshot(await refreshSnapshot(token, 'challenge'));
+      applySnapshot(await refreshSnapshot(token, 'challenge', undefined, weekOffset));
       challengeVisible = false;
       debugAlert('Visible challenge accepted by the Worker. The refresh completed.');
       finishRefresh();
@@ -261,6 +263,25 @@
         ? `Visible challenge token was rejected by the Worker: ${errorMessage(cause)}`
         : `Refresh failed after the visible challenge token was submitted: ${errorMessage(cause)}`);
       return false;
+    }
+  }
+  async function selectWeek(offset: number) {
+    if (offset === weekOffset || weekPending || requestPending) return;
+    weekOffset = offset;
+    weekPending = true;
+    try {
+      applySnapshot(await loadSnapshot(new Date(), offset));
+    } catch (cause) {
+      if (debugTurnstile) {
+        let probeResult: string;
+        try { probeResult = `HTTP ${await probeDashboardConnection()}`; }
+        catch (probeCause) { probeResult = errorMessage(probeCause); }
+        error = `${errorMessage(cause)}; small API request: ${probeResult}`;
+      } else {
+        error = 'Could not load that week. Please try again.';
+      }
+    } finally {
+      weekPending = false;
     }
   }
   function cycleTheme() {
@@ -406,7 +427,7 @@
   </section>
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
-      <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} />
+      <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} {weekOffset} {weekPending} onSelectWeek={selectWeek} />
     {:else}
       <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
     {/if}

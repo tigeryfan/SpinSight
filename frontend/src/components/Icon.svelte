@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { name }: { name: 'refresh' | 'light' | 'dark' | 'system' | 'chevron' } = $props();
+  let { name }: { name: 'refresh' | 'light' | 'dark' | 'system' | 'chevron' | 'chevron-left' | 'chevron-right' } = $props();
 </script>
 
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -11,6 +11,10 @@
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
   {:else if name === 'system'}
     <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8m-4-4v4" />
+  {:else if name === 'chevron-left'}
+    <path d="m15 6-6 6 6 6" />
+  {:else if name === 'chevron-right'}
+    <path d="m9 6 6 6-6 6" />
   {:else}
     <path d="m6 9 6 6 6-6" />
   {/if}

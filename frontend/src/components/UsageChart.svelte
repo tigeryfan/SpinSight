@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
   import { dailyUsage, dailyChartAxis, weeklyUsage, weeklyChartBounds, days, dayNames, type Machine, type Snapshot, type UsagePoint } from '../lib/data';
-  let { machines, history, dates, animationKey }: { machines: Machine[]; history: Snapshot['history']; dates: Date[]; animationKey: number } = $props();
+  import Icon from './Icon.svelte';
+  let { machines, history, dates, animationKey, weekOffset = 0, weekPending = false, onSelectWeek }: { machines: Machine[]; history: Snapshot['history']; dates: Date[]; animationKey: number; weekOffset?: number; weekPending?: boolean; onSelectWeek?: (offset: number) => void } = $props();
   let view = $state(-1);
   let width = $state(700);
   let active = $state<number | null>(null);
@@ -92,7 +93,8 @@
   };
   let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
   let weeklyAxisLabels = $derived(view === -1 ? points : []);
-  let title = $derived(view === -1 ? 'Last full week' : `${dayNames[view]}, ${formatDate(dates[view])}`);
+  let weekRangeLabel = $derived(`${formatDate(dates[0])} – ${formatDate(dates[6])}`);
+  let title = $derived(view === -1 ? (weekOffset === 0 ? 'Last full week' : `Week of ${formatDate(dates[0])}`) : `${dayNames[view]}, ${formatDate(dates[view])}`);
   let dataKey = $derived(points.map(point => `${point.timestamp}:${point.washers ?? 'x'}:${point.dryers ?? 'x'}`).join('|'));
   let selected = $derived(points[Math.min(hoverIndex, points.length - 1)] ?? emptyPoint);
   let hoverX = $derived(points.length ? x(Math.min(hoverIndex, points.length - 1)) : left + plotWidth / 2);
@@ -128,6 +130,14 @@
     redrawRequest;
     chartWidth;
     void tick().then(() => { if (!dragMoved) redrawChart(); });
+  });
+  // Snapping to the week view whenever a different week is loaded keeps the
+  // day tabs aligned with the visible date range.
+  $effect(() => {
+    weekOffset;
+    view = -1;
+    active = null;
+    hoverIndex = 0;
   });
 
   function select(index: number, focus = false, animate = true) {
@@ -194,7 +204,18 @@
 <svelte:window onpointerup={endDrag} onpointercancel={endDrag} />
 <section class="panel chart-panel" aria-labelledby="usage-title">
   <div class="chart-header">
-    <h2 id="usage-title">Usage</h2>
+    <div class="title-cell">
+      <h2 id="usage-title">Usage</h2>
+      <div class="week-nav" role="group" aria-label="Week selector" inert={!onSelectWeek || weekPending}>
+        <button class="week-nav-step" aria-label="Previous week" disabled={weekPending} onclick={() => onSelectWeek?.(weekOffset + 1)}>
+          <Icon name="chevron-left" />
+        </button>
+        <span class="week-nav-label" aria-live="polite">{weekRangeLabel}</span>
+        <button class="week-nav-step" aria-label="Next week" disabled={weekPending || weekOffset >= 0} onclick={() => onSelectWeek?.(weekOffset - 1)}>
+          <Icon name="chevron-right" />
+        </button>
+      </div>
+    </div>
     <div class="range" role="tablist" tabindex="-1" aria-label="Usage period" bind:this={tabs} onkeydown={tabKey} onpointermove={drag}
       onpointerleave={() => { if (!dragMoved) dragState = null; }}>
       {#if thumb}
@@ -270,7 +291,7 @@
         </div>
     </div>
   </div>
-  <p class="history-note">{#if view === -1}{formatDate(dates[0])}–{formatDate(dates[6])}{:else}{formatDate(dates[view])}{/if}{#if view === -1}{' · '}Daily peak of recorded running counts.{/if}{#if hasGaps}{view === -1 ? ' ' : ' · '}Gaps mean no readings were available.{/if}</p>
+  <p class="history-note">{view === -1 ? 'Daily peak of recorded running counts.' : formatDate(dates[view])}{#if hasGaps}{view === -1 ? ' ' : ' · '}Gaps mean no readings were available.{/if}</p>
 </section>
 
 <style>
@@ -280,6 +301,14 @@
   .chart-panel { container-type: inline-size; padding: 20px 22px 14px; border-radius: var(--radius-panel); }
   h2 { grid-area: title; }
   .chart-header { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'title legend' 'range range'; align-items: center; gap: 6px 16px; margin-bottom: 12px; }
+  .title-cell { grid-area: title; display: inline-flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+  .title-cell h2 { margin: 0; }
+  .week-nav { display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: var(--radius-control); background: var(--bg); }
+  .week-nav-step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; border-radius: calc(var(--radius-control) - 4px); color: var(--muted); transition: color .14s ease, background-color .14s ease; }
+  .week-nav-step:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
+  .week-nav-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .week-nav-step:disabled { opacity: .4; cursor: not-allowed; }
+  .week-nav-label { padding: 0 6px; font-size: 12px; line-height: 18px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .range { grid-area: range; justify-self: start; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: flex; gap: 6px; padding: 0; border: 0; border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
   .range button { flex: none; display: flex; align-items: center; justify-content: center; z-index: 1; padding: 0; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 12px; line-height: 18px; cursor: grab; }
