@@ -6,7 +6,7 @@
 <section class="break-banner" role="alert" aria-labelledby="break-banner-title" transition:cardTransition|global>
   <div class="banner-copy">
     <h2 id="break-banner-title">We're on break</h2>
-    <p>Webb is currently on break. All boarders have left the campus and laundry data is unavailable. Would you like to try SpinSight in demo mode?</p?
+    <p>Webb is currently on break. All boarders have left the campus and laundry data is unavailable. Would you like to try SpinSight in demo mode?</p>
   </div>
   <div class="banner-actions">
     <button class="pill banner-primary" onclick={onConfirm}>Try demo data</button>
