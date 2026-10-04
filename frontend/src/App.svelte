@@ -133,7 +133,7 @@
   let staleThreshold = 6 * 60 * 60_000;
   let dataIsStale = $derived(snapshot?.refreshedAt !== null && snapshot?.refreshedAt !== undefined && now - snapshot.refreshedAt.getTime() > staleThreshold);
   let noDataAvailable = $derived(!error && snapshot !== null && (snapshot.machines.length === 0 || dataIsStale));
-  let breakBannerVisible = $derived(noDataAvailable && !demoMode && !breakBannerDismissed);
+  let breakBannerVisible = $derived(!demoMode && !breakBannerDismissed);
   let demoBannerVisible = $derived(demoMode && !demoBannerDismissed);
 
   function startRefreshSpin() {
@@ -365,9 +365,6 @@
     if (new URLSearchParams(window.location.search).has('demo')) {
       demoMode = true;
       pendingDemo = true;
-      const cleaned = new URL(window.location.href);
-      cleaned.searchParams.delete('demo');
-      window.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
     }
     let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
     if (!savedTheme) {
@@ -415,7 +412,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> ( demo)</span>{/if}</span></a></h1>
+      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> (demo)</span>{/if}</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -521,7 +518,7 @@
 </main>
 
 <style>
-  .brand-home { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; white-space: nowrap; }
+  .brand-home { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; white-space: nowrap; }
   .brand-home.demo, .brand-home.demo .brand-logo { color: var(--demo-accent); }
   .brand-home.demo .wordmark-suffix { color: var(--demo-accent); font-weight: 500; }
   .brand-logo { width: 1em; height: 1em; flex: none; transform: translateY(.02em); }

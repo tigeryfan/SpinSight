@@ -64,7 +64,7 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; }
 .theme-content { display: grid; width: 100%; }
 .theme-option { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; }
 .theme-label { display: inline-block; min-width: 0; overflow: hidden; opacity: 1; transform: scaleX(1); transform-origin: left; white-space: nowrap; transition: opacity 120ms ease, transform 180ms ease; }
-.brand { display: grid; gap: 4px; flex: 1 1 0; min-width: 92px; container: brand / inline-size; }
+.brand { display: grid; gap: 1px; flex: 1 1 0; min-width: 92px; container: brand / inline-size; }
 .update-note { font-size: 11px; color: var(--muted); }
 .update-date { white-space: normal; }
 .date-part { white-space: nowrap; }
