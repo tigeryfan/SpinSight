@@ -1,13 +1,13 @@
 import type { MachineSnapshot } from '../../../worker/src/types';
 
-// Demo roster mirrors the on-campus machine numbering so the dashboard
-// layout (dorms, machine counts, dropdown options) matches real data.
+// Same roster as real dorms.ts so demo mode shows the actual machine names,
+// dorm groups, and counts that the dashboard expects.
 const demoAssignments: Array<{ dorm: string; numbers: number[] }> = [
-  { dorm: 'Alamo', numbers: [5, 6, 7, 13, 14, 15] },
-  { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12, 16, 17] },
-  { dorm: 'South Hutch', numbers: [1, 2, 22, 23] },
-  { dorm: 'North Hutch', numbers: [3, 4, 24, 25] },
-  { dorm: 'Appleby', numbers: [18, 19, 20, 21, 26, 27, 28] },
+  { dorm: 'Alamo', numbers: [5, 6, 7] },
+  { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12] },
+  { dorm: 'South Hutch', numbers: [1, 2] },
+  { dorm: 'North Hutch', numbers: [3, 4] },
+  { dorm: 'Appleby', numbers: [18, 19, 20, 21] },
 ];
 
 const cycleMinutes = { Washer: 37, Dryer: 45 };
@@ -54,10 +54,6 @@ function buildStatus(seed: number, isLive: boolean, type: 'Washer' | 'Dryer'): D
   return { status: 'Running', minutesLeft };
 }
 
-function machineAddress(dorm: string, number: number, type: 'Washer' | 'Dryer'): string {
-  return `demo-${type === 'Washer' ? 'W' : 'D'}${number}-${dorm.replace(/\s+/g, '')}`;
-}
-
 function machineName(number: number, type: 'Washer' | 'Dryer'): string {
   return `${type === 'Washer' ? 'W' : 'D'}${number}`;
 }
@@ -68,10 +64,11 @@ function buildDemoMachine(seed: number, dorm: string, number: number, type: 'Was
   const isLive = livePick < fraction;
   const { status, minutesLeft } = buildStatus(seed, isLive, type);
   const eta = status === 'Running' ? new Date(now.getTime() + minutesLeft * 60_000).toISOString() : '';
+  const name = machineName(number, type);
   return {
-    bluetooth_address: machineAddress(dorm, number, type),
+    bluetooth_address: name,
     poll_time: now.toISOString(),
-    machine_name: machineName(number, type),
+    machine_name: name,
     location_name: dorm,
     status,
     platform_type: 'Greenwald',
@@ -93,10 +90,11 @@ function buildHistoryRow(seed: number, dorm: string, number: number, type: 'Wash
   const minutesLeft = isLive ? pick(seed, 6, Math.max(1, duration - 2)) + 1 : 0;
   const status = isLive ? 'Running' : 'Available';
   const eta = isLive ? new Date(pollTime.getTime() + minutesLeft * 60_000).toISOString() : '';
+  const name = machineName(number, type);
   return {
-    bluetooth_address: machineAddress(dorm, number, type),
+    bluetooth_address: name,
     poll_time: pollTime.toISOString(),
-    machine_name: machineName(number, type),
+    machine_name: name,
     location_name: dorm,
     status,
     platform_type: 'Greenwald',
@@ -118,10 +116,22 @@ export interface DemoPayload {
 
 export const demoDorms: string[] = demoAssignments.map((group) => group.dorm);
 
+// Snap every synthetic poll to either the top of the hour or thirty minutes in,
+// so the chart axis labels show only :00 and :30 markers, matching the real
+// cadence the dashboard's daily view is built around.
+function snapToHalfHour(now: Date): Date {
+  const snapped = new Date(now);
+  snapped.setMinutes(now.getMinutes() < 30 ? 0 : 30, 0, 0);
+  return snapped;
+}
+
 /** Build a synthetic dashboard payload. Each call produces a fresh dataset
  *  driven by the current second, so a manual Refresh shows new minutesLeft
  *  values and shifted active counts without persisting anywhere. */
 export function generateDemoPayload(dates: Date[], now: Date = new Date()): DemoPayload {
+  // Latest poll rides the current half-hour mark so the chart's right edge
+  // sits on :00 or :30, not on a fractional minute.
+  const latestPoll = snapToHalfHour(now);
   // Refresh every second so manual Refreshes show new minutesLeft and eta values.
   const epochSeed = Math.floor(now.getTime() / 1000);
   const latest: MachineSnapshot[] = [];
@@ -129,7 +139,7 @@ export function generateDemoPayload(dates: Date[], now: Date = new Date()): Demo
     for (const number of group.numbers) {
       for (const type of ['Washer', 'Dryer'] as const) {
         const seed = epochSeed + number + (type === 'Washer' ? 0 : 9973);
-        latest.push(buildDemoMachine(seed, group.dorm, number, type, now));
+        latest.push(buildDemoMachine(seed, group.dorm, number, type, latestPoll));
       }
     }
   }
@@ -139,7 +149,7 @@ export function generateDemoPayload(dates: Date[], now: Date = new Date()): Demo
   const historyWeeks = 4;
   const totalHours = 24 * 7 * historyWeeks;
   for (let hourOffset = 1; hourOffset <= totalHours; hourOffset += 1) {
-    const pollTimeAtHour = new Date(now.getTime() - hourOffset * hourly);
+    const pollTimeAtHour = snapToHalfHour(new Date(now.getTime() - hourOffset * hourly));
     const hourSeed = Math.floor(pollTimeAtHour.getTime() / hourly);
     for (const group of demoAssignments) {
       for (const number of group.numbers) {
