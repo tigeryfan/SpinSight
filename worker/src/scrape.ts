@@ -61,13 +61,14 @@ export async function runScrape(env: Env): Promise<ScrapeResult> {
 }
 
 // Demo assignments mirror the on-campus machine numbering the frontend uses to
-// group machines by dorm. Both washers and dryers share the same numeric range.
+// group machines by dorm. Numbers expand the per-dorm roster so the dashboard
+// has enough machines for the chart and per-dorm breakdowns to feel real.
 const demoAssignments: Array<{ dorm: string; numbers: number[] }> = [
-  { dorm: 'Alamo', numbers: [5, 6, 7] },
-  { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12] },
-  { dorm: 'South Hutch', numbers: [1, 2] },
-  { dorm: 'North Hutch', numbers: [3, 4] },
-  { dorm: 'Appleby', numbers: [18, 19, 20, 21] },
+  { dorm: 'Alamo', numbers: [5, 6, 7, 13, 14, 15] },
+  { dorm: 'Upper Dorms', numbers: [8, 9, 10, 11, 12, 16, 17] },
+  { dorm: 'South Hutch', numbers: [1, 2, 22, 23] },
+  { dorm: 'North Hutch', numbers: [3, 4, 24, 25] },
+  { dorm: 'Appleby', numbers: [18, 19, 20, 21, 26, 27, 28] },
 ];
 
 // A tiny deterministic hash so consecutive demo polls look different but stay
@@ -81,21 +82,59 @@ function cycleDurationMinutes(type: string): number {
   return type === 'Washer' ? 37 : type === 'Dryer' ? 45 : 30;
 }
 
+// Active share of a dorm's roster varies with the time of day: late-night is
+// mostly idle, afternoon/evening is busiest. Returns a 0..1 fraction of the
+// roster that should currently be Running.
+function liveFraction(date: Date): number {
+  const hour = date.getHours() + date.getMinutes() / 60;
+  // Skewed sine over the 24h cycle, peak ~18:00, trough ~04:00.
+  const phase = ((hour - 9) / 24) * 2 * Math.PI;
+  const curve = (Math.sin(phase) + 1) / 2; // 0..1
+  return 0.18 + curve * 0.55; // 0.18..0.73
+}
+
+// Weekly cycle: weekends run a bit lighter, especially Sunday morning.
+function weeklyMultiplier(date: Date): number {
+  const day = date.getDay();
+  if (day === 0) return 0.7;
+  if (day === 6) return 0.85;
+  return 1.0;
+}
+
+interface DemoBuild {
+  status: 'Running' | 'Available' | 'Completed';
+  minutesLeft: number;
+}
+
+function buildStatus(seed: number, isLive: boolean, type: string): DemoBuild {
+  // Within the live slice, bias toward mid-cycle so the "next" countdown looks varied.
+  const duration = cycleDurationMinutes(type);
+  const minutesLeft = pick(seed, 11, Math.max(1, duration - 1)) + 1;
+  if (!isLive) {
+    const idle = pick(seed, 12, 3);
+    return idle === 0
+      ? { status: 'Completed', minutesLeft: 0 }
+      : { status: 'Available', minutesLeft: 0 };
+  }
+  return { status: 'Running', minutesLeft };
+}
+
 function buildDemoMachine(seed: number, dorm: string, number: number, type: string, now: Date): GreenwaldMachine {
-  const slot = pick(seed, 1, 3);
-  const minutesLeft = pick(seed, 2, cycleDurationMinutes(type) - 4) + 4;
-  const eta = new Date(now.getTime() + minutesLeft * 60_000).toISOString();
-  const status = slot === 0 ? 'Running' : slot === 1 ? 'Available' : 'Completed';
+  const fraction = liveFraction(now) * weeklyMultiplier(now);
+  const livePick = pick(seed, 1, 100) / 100;
+  const isLive = livePick < fraction;
+  const { status, minutesLeft } = buildStatus(seed, isLive, type);
+  const eta = status === 'Running' ? new Date(now.getTime() + minutesLeft * 60_000).toISOString() : '';
   return {
     machineName: `${type === 'Washer' ? 'W' : 'D'}${number}`,
     locationName: dorm,
     bluetoothAddress: `demo-${type === 'Washer' ? 'W' : 'D'}${number}`,
     status,
     platformType: 'Greenwald',
-    estimatedCompletionTime: status === 'Running' ? eta : '',
+    estimatedCompletionTime: eta,
     machineType: type,
     topOffAvailable: type === 'Washer' && pick(seed, 3, 2) === 0,
-    multiTopOffAvailable: false,
+    multiTopOffAvailable: type === 'Washer' && pick(seed, 13, 4) === 0,
     superCycleAvailable: type === 'Washer' && pick(seed, 4, 4) === 0,
     topOffCost: type === 'Washer' ? 1 : null,
     minutesPerTopOff: type === 'Washer' ? 12 : null,
@@ -103,13 +142,14 @@ function buildDemoMachine(seed: number, dorm: string, number: number, type: stri
 }
 
 function buildHistoryMachines(seed: number, dorm: string, number: number, type: string, pollTime: Date): GreenwaldMachine {
-  // History rows stay binary: Available or Running, so the chart's peak counter
-  // varies through the day.
-  const slot = pick(seed, 5, 4);
-  const status = slot === 0 ? 'Running' : 'Available';
-  const eta = status === 'Running'
-    ? new Date(pollTime.getTime() + pick(seed, 6, cycleDurationMinutes(type) - 2) * 60_000).toISOString()
-    : '';
+  // Hourly history uses a coarser status so the chart peak counter moves day to day.
+  const fraction = liveFraction(pollTime) * weeklyMultiplier(pollTime);
+  const livePick = pick(seed, 5, 100) / 100;
+  const isLive = livePick < fraction;
+  const duration = cycleDurationMinutes(type);
+  const minutesLeft = isLive ? pick(seed, 6, Math.max(1, duration - 2)) + 1 : 0;
+  const status: 'Running' | 'Available' = isLive ? 'Running' : 'Available';
+  const eta = status === 'Running' ? new Date(pollTime.getTime() + minutesLeft * 60_000).toISOString() : '';
   return {
     machineName: `${type === 'Washer' ? 'W' : 'D'}${number}`,
     locationName: dorm,
@@ -126,19 +166,21 @@ function buildHistoryMachines(seed: number, dorm: string, number: number, type: 
   };
 }
 
-/** Persist a full set of demo machines plus a week of varied history so the
- *  usage chart has something to plot. Clears prior demo rows so storage does
- *  not grow without bound. */
+/** Persist a full set of demo machines plus four weeks of varied history so
+ *  the usage chart has realistic day/night and weekday/weekend peaks. Clears
+ *  prior demo rows so storage does not grow without bound. */
 export async function runDemoScrape(env: Env): Promise<ScrapeResult> {
   const now = new Date();
   const pollTime = now.toISOString();
+  // Use a 5-minute seed so demo refreshes feel responsive but a single render
+  // stays stable against itself.
   const epochSeed = Math.floor(now.getTime() / (5 * 60_000));
 
   const latest: MachineSnapshot[] = [];
   for (const group of demoAssignments) {
     for (const number of group.numbers) {
       for (const type of ['Washer', 'Dryer']) {
-        const raw = buildDemoMachine(epochSeed, group.dorm, number, type, now);
+        const raw = buildDemoMachine(epochSeed + number, group.dorm, number, type, now);
         latest.push(toMachineSnapshot(raw, pollTime));
       }
     }
@@ -146,13 +188,15 @@ export async function runDemoScrape(env: Env): Promise<ScrapeResult> {
 
   const history: MachineSnapshot[] = [];
   const hourly = 60 * 60_000;
-  for (let hourOffset = 1; hourOffset <= 24 * 7; hourOffset += 1) {
+  const historyWeeks = 4;
+  const totalHours = 24 * 7 * historyWeeks;
+  for (let hourOffset = 1; hourOffset <= totalHours; hourOffset += 1) {
     const pollTimeAtHour = new Date(now.getTime() - hourOffset * hourly);
     const seed = Math.floor(pollTimeAtHour.getTime() / hourly);
     for (const group of demoAssignments) {
       for (const number of group.numbers) {
         for (const type of ['Washer', 'Dryer']) {
-          const raw = buildHistoryMachines(seed, group.dorm, number, type, pollTimeAtHour);
+          const raw = buildHistoryMachines(seed + number, group.dorm, number, type, pollTimeAtHour);
           history.push(toMachineSnapshot(raw, pollTimeAtHour.toISOString()));
         }
       }

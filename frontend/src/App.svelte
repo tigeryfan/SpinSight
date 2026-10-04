@@ -11,7 +11,6 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
-  import BreakBanner from './components/BreakBanner.svelte';
   import DemoBanner from './components/DemoBanner.svelte';
   import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, probeDashboardConnection, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
@@ -95,7 +94,6 @@
   // Demo state is session-only; never persist it in cookies or localStorage so
   // each visit starts from real data again.
   let demoMode = $state(false);
-  let breakBannerDismissed = $state(false);
   let demoBannerDismissed = $state(false);
   let pendingDemo = $state(false);
   let backgroundToken: string | null = null;
@@ -128,8 +126,6 @@
   }
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
-  let noDataAvailable = $derived(!loading && !error && snapshot !== null && snapshot.machines.length === 0);
-  let breakBannerVisible = $derived(noDataAvailable && !demoMode && !breakBannerDismissed);
   let demoBannerVisible = $derived(demoMode && !demoBannerDismissed);
 
   function startRefreshSpin() {
@@ -282,7 +278,6 @@
     }
   }
   async function startDemo() {
-    breakBannerDismissed = true;
     demoBannerDismissed = false;
     pendingDemo = true;
     await refreshDashboard();
@@ -411,7 +406,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> (demo)</span>{/if}</span></a></h1>
+      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> ( demo)</span>{/if}</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -445,7 +440,6 @@
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
   {#if demoBannerVisible}<DemoBanner onConfirm={exitDemo} onDismiss={() => demoBannerDismissed = true} />{/if}
-  {#if breakBannerVisible}<BreakBanner onConfirm={() => void startDemo()} onDismiss={() => breakBannerDismissed = true} />{/if}
   {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>

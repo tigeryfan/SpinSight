@@ -92,8 +92,8 @@ export default {
 
       const start = parseTimestamp(url.searchParams.get('start'));
       const end = parseTimestamp(url.searchParams.get('end'));
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > 8 * 24 * 60 * 60 * 1000) {
-        return jsonError(400, 'invalid_range', 'Provide ISO start and end timestamps with a timezone, in order and at most 8 days apart.', headers);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+        return jsonError(400, 'invalid_range', 'Provide ISO start and end timestamps with a timezone, in order.', headers);
       }
       const dashboard = await readDashboard(env, new Date(start).toISOString(), new Date(end).toISOString());
       return Response.json(dashboard, { headers });
