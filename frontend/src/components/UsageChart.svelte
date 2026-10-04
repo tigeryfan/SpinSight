@@ -307,13 +307,13 @@
   .week-nav-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .week-nav-step:disabled { opacity: .4; cursor: not-allowed; }
   .week-nav-label { padding: 0 6px; font-size: 12px; line-height: 18px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .range { grid-area: range; justify-self: start; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: flex; gap: 6px; padding: 0; border: 0; border-radius: var(--range-radius); background: transparent; user-select: none; touch-action: pan-y; }
+  .range { grid-area: range; justify-self: start; min-width: 0; --range-inset: 3px; --range-radius: var(--radius-control); position: relative; display: flex; gap: 6px; padding: 0; border: 0; border-radius: var(--range-radius); user-select: none; touch-action: pan-y; }
   /* Colors inherit the animated root palette; another transition here lags behind it. */
   .range button { flex: none; display: flex; align-items: center; justify-content: center; z-index: 1; padding: 0; border: 0; background: transparent; border-radius: calc(var(--range-radius) - var(--range-inset) - 1px); color: var(--ink); font-size: 12px; line-height: 18px; cursor: grab; }
   .range button:active { cursor: grabbing; }
   .range button span { display: inline-block; padding: 3px; }
-  /* The thumb keeps the text labels positioned over each tab so the active one can be highlighted via color alone; no background fill. */
-  .range-thumb { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: transparent; color: var(--accent); font-size: 12px; line-height: 18px;
+  /* The pill clips its background and selected text together, including mid-letter overlaps. */
+  .range-thumb { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--selected); color: var(--selected-ink); font-size: 12px; line-height: 18px;
     clip-path: inset(calc(50% - var(--usage-pill-height) / 2) calc(100% - var(--usage-pill-center) - var(--usage-pill-width) / 2) calc(50% - var(--usage-pill-height) / 2) calc(var(--usage-pill-center) - var(--usage-pill-width) / 2) round calc(var(--range-radius) - var(--range-inset) - 1px));
     transition: --usage-pill-center .28s cubic-bezier(.4, 0, .2, 1), --usage-pill-width .28s cubic-bezier(.4, 0, .2, 1), --usage-pill-height .28s cubic-bezier(.4, 0, .2, 1); }
   .range-thumb > span { position: absolute; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; }
