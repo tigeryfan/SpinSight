@@ -237,14 +237,29 @@
   function finishRefresh() { loading = false; requestPending = false; refreshSpinning = false; }
   async function refreshDashboard() {
     if (requestPending) return;
+    if (demoMode || pendingDemo) {
+      // Demo mode never reaches the Worker; regenerate locally and skip Turnstile
+      // entirely so Refresh stays usable while the backend is down.
+      requestPending = true;
+      loading = true; error = '';
+      startRefreshSpin();
+      try {
+        applySnapshot(await loadSnapshot(new Date(), weekOffset, true));
+        pendingDemo = false;
+        finishRefresh();
+      } catch (cause) {
+        error = debugTurnstile ? errorMessage(cause) : 'Could not refresh the machines. Please try again.';
+        finishRefresh();
+      }
+      return;
+    }
     requestPending = true;
     retryRefresh = true;
     loading = true; error = '';
     startRefreshSpin();
     const token = await takeBackgroundToken();
     try {
-      applySnapshot(await refreshSnapshot(token ?? '', 'background', undefined, weekOffset, demoMode || pendingDemo));
-      pendingDemo = false;
+      applySnapshot(await refreshSnapshot(token ?? '', 'background', undefined, weekOffset));
       debugAlert('Refresh allowed. The Worker verified the background token, and this browser has no active rapid-refresh challenge window. No visible challenge was needed.');
       resetBackgroundCheck();
       finishRefresh();
@@ -271,8 +286,7 @@
     error = '';
     startRefreshSpin();
     try {
-      applySnapshot(await refreshSnapshot(token, 'challenge', undefined, weekOffset, demoMode || pendingDemo));
-      pendingDemo = false;
+      applySnapshot(await refreshSnapshot(token, 'challenge', undefined, weekOffset));
       challengeVisible = false;
       debugAlert('Visible challenge accepted by the Worker. The refresh completed.');
       finishRefresh();
@@ -392,7 +406,7 @@
   });
 </script>
 
-<svelte:head><title>SpinSight{demoMode ? '(demo)' : ''} · {dorm}</title></svelte:head>
+<svelte:head><title>SpinSight{demoMode ? ' (demo)' : ''} · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
@@ -412,7 +426,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> (demo)</span>{/if}</span></a></h1>
+      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix">{' '}(demo)</span>{/if}</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
