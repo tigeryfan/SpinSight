@@ -301,7 +301,7 @@
   .chart-panel { container-type: inline-size; padding: 20px 22px 14px; border-radius: var(--radius-panel); }
   h2 { grid-area: title; }
   .chart-header { display: grid; grid-template-columns: auto auto; grid-template-areas: 'title legend' 'range range' 'week week'; align-items: center; gap: 6px 12px; margin-bottom: 12px; }
-  .week-nav { grid-area: week; justify-self: start; display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: var(--radius-control); background: var(--bg); }
+  .week-nav { grid-area: week; justify-self: start; display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: var(--radius-control); background: transparent; }
   .week-nav-step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; border-radius: calc(var(--radius-control) - 4px); color: var(--muted); transition: color .14s ease, background-color .14s ease; }
   .week-nav-step:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
   .week-nav-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
