@@ -128,7 +128,11 @@
   }
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
-  let noDataAvailable = $derived(!loading && !error && snapshot !== null && snapshot.machines.length === 0);
+  // Treat both empty and stale data as "on break": stale means Greenwald hasn't
+  // reported in over six hours, which is the signal that the dorms are paused.
+  let staleThreshold = 6 * 60 * 60_000;
+  let dataIsStale = $derived(snapshot?.refreshedAt !== null && snapshot?.refreshedAt !== undefined && now - snapshot.refreshedAt.getTime() > staleThreshold);
+  let noDataAvailable = $derived(!error && snapshot !== null && (snapshot.machines.length === 0 || dataIsStale));
   let breakBannerVisible = $derived(noDataAvailable && !demoMode && !breakBannerDismissed);
   let demoBannerVisible = $derived(demoMode && !demoBannerDismissed);
 
