@@ -11,6 +11,7 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
+  import BreakBanner from './components/BreakBanner.svelte';
   import DemoBanner from './components/DemoBanner.svelte';
   import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, probeDashboardConnection, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
@@ -94,6 +95,7 @@
   // Demo state is session-only; never persist it in cookies or localStorage so
   // each visit starts from real data again.
   let demoMode = $state(false);
+  let breakBannerDismissed = $state(false);
   let demoBannerDismissed = $state(false);
   let pendingDemo = $state(false);
   let backgroundToken: string | null = null;
@@ -126,6 +128,8 @@
   }
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
+  let noDataAvailable = $derived(!loading && !error && snapshot !== null && snapshot.machines.length === 0);
+  let breakBannerVisible = $derived(noDataAvailable && !demoMode && !breakBannerDismissed);
   let demoBannerVisible = $derived(demoMode && !demoBannerDismissed);
 
   function startRefreshSpin() {
@@ -278,6 +282,7 @@
     }
   }
   async function startDemo() {
+    breakBannerDismissed = true;
     demoBannerDismissed = false;
     pendingDemo = true;
     await refreshDashboard();
@@ -440,6 +445,7 @@
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
   {#if demoBannerVisible}<DemoBanner onConfirm={exitDemo} onDismiss={() => demoBannerDismissed = true} />{/if}
+  {#if breakBannerVisible}<BreakBanner onConfirm={() => void startDemo()} onDismiss={() => breakBannerDismissed = true} />{/if}
   {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>

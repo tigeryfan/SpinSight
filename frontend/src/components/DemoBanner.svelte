@@ -6,7 +6,7 @@
 <section class="demo-banner" role="alert" aria-labelledby="demo-banner-title" transition:cardTransition|global>
   <div class="banner-copy">
     <h2 id="demo-banner-title">Demo mode</h2>
-    <p>SpinSight is showing synthetic data — live readings are unavailable until the break ends.</p>
+    <p>You are in demo mode. SpinSight is showing synthetic data.</p>
   </div>
   <div class="banner-actions">
     <button class="pill banner-primary" onclick={onConfirm}>Exit demo</button>
