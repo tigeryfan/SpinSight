@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { RefreshError, runScrape } from './scrape';
+import { RefreshError, runDemoScrape, runScrape } from './scrape';
 import { readDashboard } from './store';
 import { recordRefreshAttempt, verifyTurnstile } from './refresh-guard';
 import { clientIdentity } from './client-identity';
@@ -69,11 +69,12 @@ export default {
         if (!env.TURNSTILE_SECRET || !env.TURNSTILE_HOSTNAMES) {
           return jsonError(503, 'verification_unavailable', 'Refresh verification is unavailable.', headers);
         }
-        let body: { token?: unknown; mode?: unknown };
+        let body: { token?: unknown; mode?: unknown; demo?: unknown };
         try { body = await request.json() as typeof body; }
         catch { return jsonError(400, 'invalid_request', 'Provide a verification token.', headers); }
         const token = body?.token;
         const mode = body?.mode;
+        const demo = body?.demo === true;
         if (typeof token !== 'string' || (mode !== 'background' && mode !== 'challenge')) {
           return jsonError(400, 'invalid_request', 'Provide a verification token.', headers);
         }
@@ -85,8 +86,8 @@ export default {
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
         const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);
         if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers, 'verification_failed');
-        const result = await runScrape(env);
-        return Response.json({ ok: true, ...result }, { headers });
+        const result = demo ? await runDemoScrape(env) : await runScrape(env);
+        return Response.json({ ok: true, ...result, demo }, { headers });
       }
 
       const start = parseTimestamp(url.searchParams.get('start'));

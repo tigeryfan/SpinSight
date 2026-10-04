@@ -7,6 +7,8 @@
 @property --line { syntax: '<color>'; inherits: true; initial-value: #e4e4e7; }
 @property --accent { syntax: '<color>'; inherits: true; initial-value: #2563eb; }
 @property --warn { syntax: '<color>'; inherits: true; initial-value: #d97706; }
+@property --demo-accent { syntax: '<color>'; inherits: true; initial-value: #a16207; }
+@property --demo-accent-ink { syntax: '<color>'; inherits: true; initial-value: #fff; }
 @property --done { syntax: '<color>'; inherits: true; initial-value: #9ca3af; }
 @property --selected { syntax: '<color>'; inherits: true; initial-value: #111827; }
 @property --selected-ink { syntax: '<color>'; inherits: true; initial-value: #fff; }
@@ -18,11 +20,12 @@
   --bg: #f7f7f8; --panel: #fff; --ink: #1a1a1a; --muted: #65656b; --line: #e4e4e7;
   --accent: #2563eb; --wash: #60a5fa; --dry: #fb923c; --running: #10b981; --warn: #d97706; --done: #9ca3af;
   --selected: #111827; --selected-ink: #fff;
+  --demo-accent: #a16207; --demo-accent-ink: #fff;
   --popover-shadow: 0 8px 24px #00000020;
   --radius-panel: 16px; --radius-control: 12px; --radius-machine: 8px;
   --control-inset: 4px; --panel-padding: 16px;
   color: var(--ink); background: var(--bg); scrollbar-color: var(--line) var(--bg);
-  transition-property: --bg, --panel, --ink, --muted, --line, --accent, --warn, --done, --selected, --selected-ink;
+  transition-property: --bg, --panel, --ink, --muted, --line, --accent, --warn, --demo-accent, --demo-accent-ink, --done, --selected, --selected-ink;
   transition-duration: 220ms;
   transition-timing-function: ease-out;
 }
@@ -31,6 +34,7 @@
     color-scheme: dark;
     --bg: #0e0f12; --panel: #181a1f; --ink: #f3f4f6; --muted: #a3a9b3; --line: #2a2d33;
     --accent: #60a5fa; --warn: #fbbf24; --done: #6b7280; --selected: #f3f4f6; --selected-ink: #0e0f12;
+    --demo-accent: #facc15; --demo-accent-ink: #1a1300;
     --popover-shadow: 0 8px 24px #00000040;
   }
 }
@@ -38,6 +42,7 @@
   color-scheme: dark;
   --bg: #0e0f12; --panel: #181a1f; --ink: #f3f4f6; --muted: #a3a9b3; --line: #2a2d33;
   --accent: #60a5fa; --warn: #fbbf24; --done: #6b7280; --selected: #f3f4f6; --selected-ink: #0e0f12;
+  --demo-accent: #facc15; --demo-accent-ink: #1a1300;
   --popover-shadow: 0 8px 24px #00000040;
 }
 * { box-sizing: border-box; }

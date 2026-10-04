@@ -222,11 +222,11 @@ export class ChallengeRequiredError extends Error {
 }
 export class VerificationFailedError extends Error {}
 
-export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date, offset = 0): Promise<Snapshot> {
+export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date, offset = 0, demo = false): Promise<Snapshot> {
   const response = await fetch(apiUrl('scrape'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, mode }),
+    body: JSON.stringify({ token, mode, demo }),
     cache: 'no-store',
     credentials: 'include',
   });
@@ -239,7 +239,7 @@ export async function refreshSnapshot(token: string, mode: 'background' | 'chall
     if (payload.error?.code === 'verification_failed') throw new VerificationFailedError('Verification failed.');
   }
   if (!response.ok) throw new Error(`Refresh failed (${response.status}).`);
-  const result = await response.json() as { ok?: boolean } | null;
+  const result = await response.json() as { ok?: boolean; demo?: boolean } | null;
   if (result?.ok !== true) throw new Error('Refresh did not complete successfully.');
   return loadSnapshot(now, offset);
 }

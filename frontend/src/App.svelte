@@ -11,6 +11,8 @@
   import TourCard from './components/TourCard.svelte';
   import ChallengeCard from './components/ChallengeCard.svelte';
   import UsageChart from './components/UsageChart.svelte';
+  import BreakBanner from './components/BreakBanner.svelte';
+  import DemoBanner from './components/DemoBanner.svelte';
   import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, probeDashboardConnection, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
@@ -85,8 +87,17 @@
   let retryRefresh = false;
   let weekOffset = $state(0);
   let weekPending = $state(false);
+  // -1 means we have not yet hit a week with no history; otherwise it is the
+  // first empty offset, which is the upper bound for the prev-week button.
+  let dataEndOffset = $state(-1);
   let challengeVisible = $state(false);
   let debugTurnstile = $state(false);
+  // Demo state is session-only; never persist it in cookies or localStorage so
+  // each visit starts from real data again.
+  let demoMode = $state(false);
+  let breakBannerDismissed = $state(false);
+  let demoBannerDismissed = $state(false);
+  let pendingDemo = $state(false);
   let backgroundToken: string | null = null;
   let backgroundWaiters: Array<(token: string | null) => void> = [];
   let backgroundApi: TurnstileApi | null = null;
@@ -117,6 +128,9 @@
   }
   let washers = $derived(summary(filtered, 'Washer'));
   let dryers = $derived(summary(filtered, 'Dryer'));
+  let noDataAvailable = $derived(!loading && !error && snapshot !== null && snapshot.machines.length === 0);
+  let breakBannerVisible = $derived(noDataAvailable && !demoMode && !breakBannerDismissed);
+  let demoBannerVisible = $derived(demoMode && !demoBannerDismissed);
 
   function startRefreshSpin() {
     if (!refreshSpinning && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) refreshSpinning = true;
@@ -225,7 +239,8 @@
     startRefreshSpin();
     const token = await takeBackgroundToken();
     try {
-      applySnapshot(await refreshSnapshot(token ?? '', 'background', undefined, weekOffset));
+      applySnapshot(await refreshSnapshot(token ?? '', 'background', undefined, weekOffset, demoMode || pendingDemo));
+      pendingDemo = false;
       debugAlert('Refresh allowed. The Worker verified the background token, and this browser has no active rapid-refresh challenge window. No visible challenge was needed.');
       resetBackgroundCheck();
       finishRefresh();
@@ -252,7 +267,8 @@
     error = '';
     startRefreshSpin();
     try {
-      applySnapshot(await refreshSnapshot(token, 'challenge', undefined, weekOffset));
+      applySnapshot(await refreshSnapshot(token, 'challenge', undefined, weekOffset, demoMode || pendingDemo));
+      pendingDemo = false;
       challengeVisible = false;
       debugAlert('Visible challenge accepted by the Worker. The refresh completed.');
       finishRefresh();
@@ -265,13 +281,37 @@
       return false;
     }
   }
+  async function startDemo() {
+    breakBannerDismissed = true;
+    demoBannerDismissed = false;
+    pendingDemo = true;
+    await refreshDashboard();
+    demoMode = true;
+  }
+  function exitDemo() {
+    demoMode = false;
+    demoBannerDismissed = true;
+    void readData();
+  }
   async function selectWeek(offset: number) {
     if (offset === weekOffset || weekPending || requestPending) return;
+    // Past weeks with no history are unreachable once we have discovered them.
+    if (dataEndOffset >= 0 && offset >= dataEndOffset) return;
+    const previousOffset = weekOffset;
     weekOffset = offset;
     weekPending = true;
     try {
-      applySnapshot(await loadSnapshot(new Date(), offset));
+      const next = await loadSnapshot(new Date(), offset);
+      if (offset > 0 && next.history.length === 0) {
+        // The history endpoint came back with no rows for that range, so the
+        // dataset ends at the previous week. Roll back and remember the limit.
+        weekOffset = previousOffset;
+        dataEndOffset = offset;
+        return;
+      }
+      applySnapshot(next);
     } catch (cause) {
+      weekOffset = previousOffset;
       if (debugTurnstile) {
         let probeResult: string;
         try { probeResult = `HTTP ${await probeDashboardConnection()}`; }
@@ -318,6 +358,13 @@
     const updateSystemTheme = () => { systemDark = systemTheme.matches; };
     systemTheme.addEventListener('change', updateSystemTheme);
     debugTurnstile = new URLSearchParams(window.location.search).has('debug');
+    if (new URLSearchParams(window.location.search).has('demo')) {
+      demoMode = true;
+      pendingDemo = true;
+      const cleaned = new URL(window.location.href);
+      cleaned.searchParams.delete('demo');
+      window.history.replaceState(null, '', cleaned.pathname + cleaned.search + cleaned.hash);
+    }
     let savedTheme = cookieValue(document.cookie, 'spinsight-theme');
     if (!savedTheme) {
       try { savedTheme = localStorage.getItem('spinsight-theme'); }
@@ -344,7 +391,7 @@
   });
 </script>
 
-<svelte:head><title>SpinSight · {dorm}</title></svelte:head>
+<svelte:head><title>SpinSight{demoMode ? ' (demo)' : ''} · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
@@ -364,7 +411,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight</span></a></h1>
+      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> (demo)</span>{/if}</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -397,6 +444,8 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
+  {#if demoBannerVisible}<DemoBanner onConfirm={exitDemo} onDismiss={() => demoBannerDismissed = true} />{/if}
+  {#if breakBannerVisible}<BreakBanner onConfirm={() => void startDemo()} onDismiss={() => breakBannerDismissed = true} />{/if}
   {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>
@@ -427,7 +476,7 @@
   </section>
   <div class="chart-tour-frame" class:tour-target={tourStep === 3}>
     {#if snapshot}
-      <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} {weekOffset} {weekPending} onSelectWeek={selectWeek} />
+      <UsageChart machines={storedMachines} history={snapshot.history} dates={snapshot.dates} animationKey={dataRevision} {weekOffset} {weekPending} {dataEndOffset} onSelectWeek={selectWeek} />
     {:else}
       <section class="panel chart-loading" aria-label="Usage chart"><p>{error ? 'Usage history is unavailable.' : 'Loading usage history…'}</p></section>
     {/if}
@@ -469,6 +518,8 @@
 
 <style>
   .brand-home { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; white-space: nowrap; }
+  .brand-home.demo, .brand-home.demo .brand-logo { color: var(--demo-accent); }
+  .brand-home.demo .wordmark-suffix { color: var(--demo-accent); font-weight: 500; }
   .brand-logo { width: 1em; height: 1em; flex: none; transform: translateY(.02em); }
   @container brand (max-width: 125px) {
     .brand-logo { display: none; }
