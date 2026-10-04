@@ -392,7 +392,7 @@
   });
 </script>
 
-<svelte:head><title>SpinSight{demoMode ? ' (demo)' : ''} · {dorm}</title></svelte:head>
+<svelte:head><title>SpinSight{demoMode ? '(demo)' : ''} · {dorm}</title></svelte:head>
 {#snippet privacyCard()}
   <section class="panel privacy-card" id="privacy" aria-labelledby="privacy-title" tabindex="-1" transition:cardTransition|global>
     <div class="info-card-heading"><h2 id="privacy-title">Privacy</h2><button class="info-card-close" aria-label="Close privacy" onclick={() => privacyVisible = false}>×</button></div>
@@ -412,7 +412,7 @@
   {#if tourStep >= 0 && tourStep <= 3}<div class="tour-backdrop" aria-hidden="true" transition:softFade></div>{/if}
   <header>
     <div class="brand">
-      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix"> (demo)</span>{/if}</span></a></h1>
+      <h1><a class="brand-home" class:demo={demoMode} href="?dorm=All%20Dorms" onclick={showAllDorms}><svg class="brand-logo" viewBox="4 4 56 56" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="8"/><path d="M8 32 C16 25 24 25 32 32 C40 39 48 39 56 32" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg><span>SpinSight{#if demoMode}<span class="wordmark-suffix">(demo)</span>{/if}</span></a></h1>
       <div class="update-note">
         {#if loading}
           <span>{snapshot ? 'Refreshing…' : 'Loading…'}</span>
@@ -445,9 +445,6 @@
     </div>
   </header>
   <div class="background-verification" bind:this={backgroundContainer}></div>
-  {#if demoBannerVisible}<DemoBanner onConfirm={exitDemo} onDismiss={() => demoBannerDismissed = true} />{/if}
-  {#if breakBannerVisible}<BreakBanner onConfirm={() => void startDemo()} onDismiss={() => breakBannerDismissed = true} />{/if}
-  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if tourStep === -1}
     <section class="tour-invite" role="alert" aria-labelledby="tour-invite-title" in:cardTransition out:dismissTourInvite>
       <div><h2 id="tour-invite-title">Welcome to SpinSight</h2><p>Want a quick tour of the dashboard?</p></div>
@@ -456,6 +453,9 @@
   {:else if tourStep >= 0 && tourStep <= 5}
     <TourCard step={tourStep} {whyNoLaundryText} next={nextTourStep} back={() => void showTourStep(tourStep - 1)} close={closeTour} />
   {/if}
+  {#if demoBannerVisible}<DemoBanner onConfirm={exitDemo} onDismiss={() => demoBannerDismissed = true} />{/if}
+  {#if breakBannerVisible}<BreakBanner onConfirm={() => void startDemo()} onDismiss={() => breakBannerDismissed = true} />{/if}
+  {#if challengeVisible}<ChallengeCard solved={completeChallenge} debug={debugTurnstile} theme={resolvedTheme} />{/if}
   {#if privacyVisible}{@render privacyCard()}{/if}
   {#if whyNoLaundryVisible}{@render whyNoLaundryCard()}{/if}
   <p class="sr-only" role="status">{announcement}</p>
