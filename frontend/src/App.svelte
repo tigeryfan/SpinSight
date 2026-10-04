@@ -221,7 +221,7 @@
     retryRefresh = false;
     loading = true; error = '';
     try {
-      applySnapshot(await loadSnapshot(new Date(), weekOffset));
+      applySnapshot(await loadSnapshot(new Date(), weekOffset, demoMode));
     } catch (cause) {
       if (debugTurnstile) {
         let probeResult: string;

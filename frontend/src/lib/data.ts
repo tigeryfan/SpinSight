@@ -175,13 +175,7 @@ function observedHours(history: MachineSnapshot[], dates: Date[]): Map<string, n
   return hours;
 }
 
-export async function loadSnapshot(now = new Date(), offset = 0): Promise<Snapshot> {
-  const dates = lastFullWeek(now, offset);
-  const url = apiUrl('dashboard');
-  url.searchParams.set('start', dates[0].toISOString());
-  // Include cycles observed after midnight that may have started during Saturday.
-  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + Math.max(...Object.values(cycleMinutes)) * minute).toISOString());
-  const payload = await requestJson(url) as DashboardResponse;
+function buildSnapshot(payload: DashboardResponse, dates: Date[], now: Date): Snapshot {
   if (!payload || !Array.isArray(payload.machines) || !Array.isArray(payload.history)
     || !payload.machines.every(isRecord) || !payload.history.every(isRecord)
     || (payload.refreshedAt !== null && (typeof payload.refreshedAt !== 'string' || timestamp(payload.refreshedAt) === null))) {
@@ -215,6 +209,21 @@ export async function loadSnapshot(now = new Date(), offset = 0): Promise<Snapsh
   };
 }
 
+export async function loadSnapshot(now = new Date(), offset = 0, demo = false): Promise<Snapshot> {
+  const dates = lastFullWeek(now, offset);
+  if (demo) {
+    // Synthetic data is generated locally so demo mode never touches D1.
+    const { generateDemoPayload } = await import('./demo');
+    return buildSnapshot(generateDemoPayload(dates, now), dates, now);
+  }
+  const url = apiUrl('dashboard');
+  url.searchParams.set('start', dates[0].toISOString());
+  // Include cycles observed after midnight that may have started during Saturday.
+  url.searchParams.set('end', new Date(weekEnd(dates).getTime() + Math.max(...Object.values(cycleMinutes)) * minute).toISOString());
+  const payload = await requestJson(url) as DashboardResponse;
+  return buildSnapshot(payload, dates, now);
+}
+
 export class ChallengeRequiredError extends Error {
   constructor(readonly reason: 'rate_limit' | 'verification_failed' | 'unknown') {
     super('Verification required.');
@@ -223,6 +232,9 @@ export class ChallengeRequiredError extends Error {
 export class VerificationFailedError extends Error {}
 
 export async function refreshSnapshot(token: string, mode: 'background' | 'challenge', now?: Date, offset = 0, demo = false): Promise<Snapshot> {
+  // The Worker still validates Turnstile and rate-limits demo refreshes; it
+  // never writes demo rows to D1. After the gate, the snapshot is generated
+  // locally so the data is fresh and per-machine.
   const response = await fetch(apiUrl('scrape'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -241,7 +253,7 @@ export async function refreshSnapshot(token: string, mode: 'background' | 'chall
   if (!response.ok) throw new Error(`Refresh failed (${response.status}).`);
   const result = await response.json() as { ok?: boolean; demo?: boolean } | null;
   if (result?.ok !== true) throw new Error('Refresh did not complete successfully.');
-  return loadSnapshot(now, offset);
+  return loadSnapshot(now, offset, demo);
 }
 
 export function deriveMachines(machines: Machine[], now: number): Machine[] {
