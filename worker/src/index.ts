@@ -69,12 +69,11 @@ export default {
         if (!env.TURNSTILE_SECRET || !env.TURNSTILE_HOSTNAMES) {
           return jsonError(503, 'verification_unavailable', 'Refresh verification is unavailable.', headers);
         }
-        let body: { token?: unknown; mode?: unknown; demo?: unknown };
+        let body: { token?: unknown; mode?: unknown };
         try { body = await request.json() as typeof body; }
         catch { return jsonError(400, 'invalid_request', 'Provide a verification token.', headers); }
         const token = body?.token;
         const mode = body?.mode;
-        const demo = body?.demo === true;
         if (typeof token !== 'string' || (mode !== 'background' && mode !== 'challenge')) {
           return jsonError(400, 'invalid_request', 'Provide a verification token.', headers);
         }
@@ -86,7 +85,7 @@ export default {
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
         const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);
         if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers, 'verification_failed');
-        const result = demo ? { ok: true as const, demo: true } : { ...await runScrape(env), demo: false };
+        const result = { ok: true as const, ...await runScrape(env) };
         return Response.json(result, { headers });
       }
 
