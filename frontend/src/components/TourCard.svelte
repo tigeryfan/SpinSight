@@ -11,7 +11,7 @@
   const steps = [
     { title: 'Get fresh machine status', text: 'Use this button to fetch the latest washer and dryer readings.' },
     { title: 'Light, dark, or auto', text: 'This button cycles through the themes. Auto follows your device setting.' },
-    { title: 'See your dorm', text: 'Choose a dorm to narrow the machines and usage chart. All Dorms shows everything.' },
+    { title: 'See your dorm', text: 'Choose a dorm to narrow the machines and usage chart.' },
     { title: 'Explore usage by day', text: 'Choose Week for last week’s daily peaks, or pick a day to see its readings.' },
     { title: 'Why are some cycles missing?', text: '' },
     { title: 'Your privacy', text: '' },
@@ -27,7 +27,7 @@
     {:else}<p>{step === 4 ? whyNoLaundryText : steps[step].text}</p>{/if}
   </div>
   <div class="tour-actions">
-    <button class="tour-secondary" onclick={close}>Skip tour</button>
+    {#if step < steps.length - 1}<button class="tour-secondary" onclick={close}>Skip tour</button>{/if}
     {#if step > 0}<button class="tour-secondary" onclick={back}>Back</button>{/if}
     <button class="tour-primary" onclick={next}>{step === steps.length - 1 ? 'Finish' : 'Next'}</button>
   </div>
