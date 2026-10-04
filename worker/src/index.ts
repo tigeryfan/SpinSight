@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { RefreshError, runDemoScrape, runScrape } from './scrape';
+import { RefreshError, runScrape } from './scrape';
 import { readDashboard } from './store';
 import { recordRefreshAttempt, verifyTurnstile } from './refresh-guard';
 import { clientIdentity } from './client-identity';
@@ -86,8 +86,8 @@ export default {
         const action = mode === 'background' ? 'refresh_background' : 'refresh_challenge';
         const verified = await verifyTurnstile(token, action, env.TURNSTILE_SECRET, hostnames, clientIp);
         if (!verified) return jsonError(403, mode === 'background' ? 'challenge_required' : 'verification_failed', 'Complete a verification to refresh.', headers, 'verification_failed');
-        const result = demo ? await runDemoScrape(env) : await runScrape(env);
-        return Response.json({ ok: true, ...result, demo }, { headers });
+        const result = demo ? { ok: true as const, demo: true } : { ...await runScrape(env), demo: false };
+        return Response.json(result, { headers });
       }
 
       const start = parseTimestamp(url.searchParams.get('start'));
