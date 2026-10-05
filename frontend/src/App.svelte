@@ -116,6 +116,23 @@
     };
   }
   function resetDebug() { debugOverrides = {}; }
+
+  function handleMachineContextMenu(event: MouseEvent) {
+    if (!debugActive) return;
+    const target = event.target as Element | null;
+    const card = target?.closest<HTMLElement>('.machine');
+    if (!card) return;
+    const machineId = card.dataset.machineId;
+    if (!machineId) return;
+    const machine = displayedMachines.find(item => item.id === machineId);
+    if (!machine) return;
+    event.preventDefault();
+    const current = machine.minutesLeft ?? 0;
+    const input = window.prompt(`Minutes left for ${machine.machineName}? (0 = clean)`, String(current));
+    if (input === null) return;
+    const minutesLeft = Math.max(0, Math.floor(Number(input)) || 0);
+    applyDebugPatch({ machineOverrides: { [machineId]: { minutesLeft } } });
+  }
   // Demo state is session-only; never persist it in cookies or localStorage so
   // each visit starts from real data again.
   let demoMode = $state(false);
@@ -580,7 +597,7 @@
       </div>
     </div>
     {#if snapshot && filtered.length}
-      <div class="grid">
+      <div class="grid" role="presentation" oncontextmenu={handleMachineContextMenu}>
         {#each ['Washer', 'Dryer', 'Other'] as type}
           {@const machines = sortedMachines.filter(machine => type === 'Other' ? !['Washer', 'Dryer'].includes(machine.machineType) : machine.machineType === type)}
           {#if type !== 'Other' || machines.length}

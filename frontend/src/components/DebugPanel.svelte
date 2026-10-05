@@ -123,7 +123,8 @@
 
 {#if buttonVisible}
   <button class="debug-toggle" type="button" aria-label={open ? 'Close debug panel' : 'Open debug panel'} aria-expanded={open}
-    onclick={() => { open = !open; }}>
+    onclick={() => { if (!open) open = true; }}
+    oncontextmenu={(event) => { event.preventDefault(); open = !open; }}>
     <span class="icon" aria-hidden="true">
       {#if open}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -200,7 +201,7 @@
       </div>
     </section>
 
-    <section class="block machines-block">
+    <section class="block machines-block" hidden>
       <h3>Machines</h3>
       <div class="machine-list">
         {#each sortedMachines as machine (machine.id)}

@@ -19,7 +19,7 @@
   };
 </script>
 
-<div class="machine" class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running' && !machine.estimatedComplete} class:completed={machine.status === 'Completed' || machine.estimatedComplete} class:expanded class:dismissed>
+<div class="machine" data-machine-id={machine.id} class:dry={machine.machineType === 'Dryer'} class:running={machine.status === 'Running' && !machine.estimatedComplete} class:completed={machine.status === 'Completed' || machine.estimatedComplete} class:expanded class:dismissed>
   <div class="progress-track" aria-hidden="true">
     {#key `${animationKey}-${percentage}`}
       <div class="progress-fill" style:--progress-width={progressWidth}></div>
