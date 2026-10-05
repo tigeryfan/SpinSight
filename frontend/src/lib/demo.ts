@@ -149,19 +149,34 @@ export function generateDemoPayload(dates: Date[], now: Date = new Date()): Demo
 
   // Build the full history series first, oldest first. The latest row uses
   // epochSeed so it varies on Refresh; older rows use hourSeed so the past
-  // pattern stays stable across refreshes.
+  // pattern stays stable across refreshes. Each dorm's rows are checked
+  // individually so every dorm always shows at least one running machine,
+  // even during quiet hours when the random draws would otherwise leave the
+  // entire dorm Available.
   const history: MachineSnapshot[] = [];
   for (let hourOffset = 0; hourOffset < totalHours; hourOffset += 1) {
     const pollTime = new Date(latestPoll.getTime() - hourOffset * hourly);
     const isLatestRow = hourOffset === 0;
     const rowSeed = isLatestRow ? epochSeed : Math.floor(pollTime.getTime() / hourly);
     for (const group of demoAssignments) {
+      const dormRows: MachineSnapshot[] = [];
       for (const number of group.numbers) {
         for (const type of ['Washer', 'Dryer'] as const) {
           const seed = rowSeed + number + (type === 'Washer' ? 0 : 9973);
-          history.push(buildRow(seed, group.dorm, number, type, pollTime));
+          dormRows.push(buildRow(seed, group.dorm, number, type, pollTime));
         }
       }
+      if (!dormRows.some(row => row.status === 'Running')) {
+        const firstByNumber = [...dormRows].sort((a, b) => machineNumber(a.machine_name ?? a.bluetooth_address) - machineNumber(b.machine_name ?? b.bluetooth_address))[0];
+        const originalIndex = dormRows.indexOf(firstByNumber);
+        const type = firstByNumber.machine_type as 'Washer' | 'Dryer';
+        const duration = cycleMinutes[type];
+        const seed = rowSeed + machineNumber(firstByNumber.machine_name ?? firstByNumber.bluetooth_address) + (type === 'Washer' ? 0 : 9973);
+        const minutesLeft = pick(seed, 23, duration - 1) + 1;
+        const eta = new Date(pollTime.getTime() + minutesLeft * 60_000).toISOString();
+        dormRows[originalIndex] = { ...firstByNumber, status: 'Running', estimated_completion_time: eta };
+      }
+      for (const row of dormRows) history.push(row);
     }
   }
 
