@@ -359,10 +359,30 @@
     await refreshDashboard();
     demoMode = true;
   }
-  function exitDemo() {
-    demoMode = false;
-    demoBannerDismissed = true;
-    void readData();
+  async function exitDemo() {
+    startRefreshSpin();
+    loading = true; error = '';
+    demoBannerDismissed = false;
+    requestPending = true;
+    try {
+      applySnapshot(await loadSnapshot(new Date(), weekOffset, false));
+    } catch (cause) {
+      if (debugTurnstile) {
+        let probeResult: string;
+        try { probeResult = `HTTP ${await probeDashboardConnection()}`; }
+        catch (probeCause) { probeResult = errorMessage(probeCause); }
+        error = `${errorMessage(cause)}; small API request: ${probeResult}`;
+      } else {
+        error = 'Could not load machine data. Please try again.';
+      }
+      announcement = '';
+    } finally {
+      demoMode = false;
+      demoBannerDismissed = true;
+      loading = false;
+      requestPending = false;
+      refreshSpinning = false;
+    }
   }
   async function selectWeek(offset: number) {
     if (offset === weekOffset || weekPending || requestPending) return;
