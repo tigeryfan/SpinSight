@@ -13,6 +13,7 @@
   import UsageChart from './components/UsageChart.svelte';
   import BreakBanner from './components/BreakBanner.svelte';
   import DemoBanner from './components/DemoBanner.svelte';
+  import DebugPanel from './components/DebugPanel.svelte';
   import { ChallengeRequiredError, VerificationFailedError, deriveMachines, filterMachines, loadSnapshot, probeDashboardConnection, refreshSnapshot, summary, usageRank, type Machine, type Snapshot } from './lib/data';
   import { loadTurnstile, turnstileSitekey, type TurnstileApi } from './lib/turnstile';
   import { cookieValue, preferenceCookie, selectDorm } from './lib/preferences';
@@ -92,6 +93,29 @@
   let dataEndOffset = $state(-1);
   let challengeVisible = $state(false);
   let debugTurnstile = $state(false);
+  let debugActive = $state(false);
+  type DebugMachineOverride = { status?: string; minutesLeft?: number | null };
+  type DebugOverrides = {
+    washersAvailable?: number;
+    washersTotal?: number;
+    dryersAvailable?: number;
+    dryersTotal?: number;
+    nextWasherMinutes?: number;
+    nextDryerMinutes?: number;
+    machineOverrides?: Record<string, DebugMachineOverride>;
+  };
+  let debugOverrides = $state<DebugOverrides>({});
+  function applyDebugPatch(patch: Partial<DebugOverrides>) {
+    debugOverrides = {
+      ...debugOverrides,
+      ...patch,
+      machineOverrides: {
+        ...(debugOverrides.machineOverrides ?? {}),
+        ...(patch.machineOverrides ?? {}),
+      },
+    };
+  }
+  function resetDebug() { debugOverrides = {}; }
   // Demo state is session-only; never persist it in cookies or localStorage so
   // each visit starts from real data again.
   let demoMode = $state(false);
@@ -108,6 +132,20 @@
   let savedDorm: string | null = null;
   let storedMachines = $derived(filterMachines(snapshot?.machines ?? [], dorm));
   let filtered = $derived(deriveMachines(storedMachines, now));
+  let displayedMachines = $derived.by(() => {
+    const overrides = debugOverrides.machineOverrides;
+    if (!overrides) return filtered;
+    return filtered.map(machine => {
+      const o = overrides[machine.id];
+      if (!o) return machine;
+      return {
+        ...machine,
+        status: o.status ?? machine.status,
+        minutesLeft: o.minutesLeft !== undefined ? o.minutesLeft : machine.minutesLeft,
+        estimatedComplete: o.status === 'Completed' ? true : machine.estimatedComplete,
+      };
+    });
+  });
   let machineSort = $state('name-asc');
   const machineSortOptions = [
     { value: 'name-asc', label: 'Name A-Z' },
@@ -115,7 +153,7 @@
     { value: 'usage-desc', label: 'Usage High-Low' },
     { value: 'usage-asc', label: 'Usage Low-High' },
   ];
-  let sortedMachines = $derived([...filtered].sort(compareMachines));
+  let sortedMachines = $derived([...displayedMachines].sort(compareMachines));
   function compareMachines(a: Machine, b: Machine) {
     const byName = a.machineName.localeCompare(b.machineName, undefined, { numeric: true });
     if (machineSort.startsWith('usage-')) {
@@ -126,8 +164,23 @@
     }
     return (machineSort === 'name-desc' ? -byName : byName) || a.id.localeCompare(b.id);
   }
-  let washers = $derived(summary(filtered, 'Washer'));
-  let dryers = $derived(summary(filtered, 'Dryer'));
+  function applySummaryOverrides(base: { total: number; available: number; next?: Machine }, overrides: { available?: number; total?: number; nextMinutes?: number }) {
+    return {
+      total: overrides.total ?? base.total,
+      available: overrides.available ?? base.available,
+      next: base.next ? { machineName: base.next.machineName, minutesLeft: overrides.nextMinutes ?? base.next.minutesLeft ?? 0 } : base.next,
+    };
+  }
+  let washers = $derived(applySummaryOverrides(summary(displayedMachines, 'Washer'), {
+    available: debugOverrides.washersAvailable,
+    total: debugOverrides.washersTotal,
+    nextMinutes: debugOverrides.nextWasherMinutes,
+  }));
+  let dryers = $derived(applySummaryOverrides(summary(displayedMachines, 'Dryer'), {
+    available: debugOverrides.dryersAvailable,
+    total: debugOverrides.dryersTotal,
+    nextMinutes: debugOverrides.nextDryerMinutes,
+  }));
   // Treat both empty and stale data as "on break": stale means Greenwald hasn't
   // reported in over six hours, which is the signal that the dorms are paused.
   let staleThreshold = 6 * 60 * 60_000;
@@ -376,6 +429,7 @@
     const updateSystemTheme = () => { systemDark = systemTheme.matches; };
     systemTheme.addEventListener('change', updateSystemTheme);
     debugTurnstile = new URLSearchParams(window.location.search).has('debug');
+    debugActive = debugTurnstile;
     if (new URLSearchParams(window.location.search).has('demo')) {
       demoMode = true;
       pendingDemo = true;
@@ -530,6 +584,7 @@
   {/if}
   <footer><a href="#privacy" onclick={showPrivacy}>Privacy</a><a href="#why-no-laundry" onclick={showWhyNoLaundry}>Missing data?</a><button type="button" onclick={startTour}>Restart tour</button><button id="report-problem-button" type="button" aria-expanded={problemVisible} aria-controls="problem-report" onclick={showProblem}>Report a problem</button></footer>
 </main>
+{#if debugActive}<DebugPanel {washers} {dryers} machines={displayedMachines} {dorm} onPatch={applyDebugPatch} onReset={resetDebug} />{/if}
 
 <style>
   .brand-home { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; white-space: nowrap; }
