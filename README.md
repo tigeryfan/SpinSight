@@ -14,7 +14,7 @@ SpinSight helps students plan around machine availability by bringing status, es
 
 The dashboard is built with **Svelte 5**, **TypeScript**, and **Vite**, and configured for hosting through **Cloudflare Workers static assets**. It presents availability summaries, individual machine cards, and usage charts, with light, dark, and system themes.
 
-The weekly chart shows each day's peak running count during the previous full Sunday–Saturday week in the device's local timezone. Daily charts show individual readings, with missing observations left blank.
+The weekly chart shows each day's peak running count during the previous 7 days in the device's local timezone. Daily charts show individual readings, with missing observations left blank.
 
 ## Backend
 
