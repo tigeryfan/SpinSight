@@ -19,25 +19,6 @@ function pick(seed: number, salt: number, mod: number): number {
   return Math.floor((value - Math.floor(value)) * mod);
 }
 
-// Active share of a dorm's roster rises into the evening and drops at night.
-// Washers peak slightly earlier than dryers, which lag because they follow
-// the wash cycles that just finished. Curve is shifted up so the day's mean
-// sits around 75% utilization, the realistic steady-state of a full dorm.
-function liveFraction(date: Date, type: 'Washer' | 'Dryer'): number {
-  const hour = date.getHours() + date.getMinutes() / 60;
-  const phaseShift = type === 'Washer' ? 0 : 1;
-  const phase = ((hour - 9 + phaseShift) / 24) * 2 * Math.PI;
-  const curve = (Math.sin(phase) + 1) / 2;
-  return Math.min(1, 0.6 + curve * 0.4);
-}
-
-function weeklyMultiplier(date: Date): number {
-  const day = date.getDay();
-  if (day === 0) return 0.7;
-  if (day === 6) return 0.85;
-  return 1;
-}
-
 function machineNumber(name: string): number {
   const match = name.match(/\d+/);
   return match ? Number.parseInt(match[0], 10) : 0;
@@ -47,15 +28,70 @@ function machineName(number: number, type: 'Washer' | 'Dryer'): string {
   return `${type === 'Washer' ? 'W' : 'D'}${number}`;
 }
 
+// Hour-of-day and day-of-week usage curve.
+//
+// Mon-Fri peaks at 8PM (dryers at 9PM) at 60% of total capacity, with a small
+// 6-8AM wave and a sparse 1-2 machines running every hour between 8AM-5PM.
+// Sat-Sun follows a gradual bell through 8AM-8PM peaking around 2PM (dryers
+// 3PM) at 80% of total capacity. Bernoulli variance keeps weekday counts away
+// from the chart ceiling (0.60^16 ≈ 0.0003 chance of all 16 running) while
+// letting weekend peaks occasionally fill it (0.80^16 ≈ 0.03 chance).
+function liveFraction(date: Date, type: 'Washer' | 'Dryer'): number {
+  const hour = date.getHours() + date.getMinutes() / 60;
+  const day = date.getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  if (isWeekend) {
+    // Outside 8AM-8PM, machines stay in quiet baseline.
+    if (hour < 8 || hour > 20) return 0.05;
+    // Bell curve centered at 14:00 (dryers at 15:00), half-width 6 hours.
+    const peakHour = type === 'Washer' ? 14 : 15;
+    const halfWidth = 6;
+    const x = (hour - peakHour) / halfWidth;
+    const bell = Math.max(0, Math.cos(x * Math.PI / 2));
+    return 0.05 + bell * 0.75; // 0.05 .. 0.80
+  }
+
+  // Weekday curve: dryers lag washers by one hour because the wash cycle that
+  // just finished produces the dryer load.
+  const peakHour = type === 'Washer' ? 20 : 21;
+
+  if (hour < 6) return 0.05;
+  if (hour < 8) {
+    // 6-8AM bump centered at 7AM: 0.05 .. 0.20.
+    const x = (hour - 7) / 1;
+    return 0.05 + Math.max(0, Math.cos(x * Math.PI / 2)) * 0.15;
+  }
+  if (hour < 17) {
+    // 8AM-5PM: 1-2 machines running every hour across all dorms. A small sine
+    // wave breathes the line so it does not look perfectly flat.
+    const wave = Math.sin((hour - 8) * Math.PI / 4.5) * 0.02;
+    return 0.12 + wave; // ~0.10 .. 0.14
+  }
+  if (hour < peakHour) {
+    // 5PM-rise to 8PM (dryers 9PM) peak at 0.60.
+    const riseHours = peakHour - 17;
+    const x = (hour - 17) / riseHours;
+    return 0.15 + x * 0.45;
+  }
+  if (hour < peakHour + 3) {
+    // 8PM (dryers 9PM) peak at 0.60 declining to 0.10 three hours later.
+    const x = (hour - peakHour) / 3;
+    return 0.60 - x * 0.50;
+  }
+  return 0.05;
+}
+
 // Build one machine snapshot for a given seed and poll time. The status is
-// fully determined by seed + pollTime so the latest history row and the
-// latest machines array can share a single source of truth.
+// fully determined by seed + pollTime so the latest history row and the latest
+// machines array can share a single source of truth.
 function buildRow(seed: number, dorm: string, number: number, type: 'Washer' | 'Dryer', pollTime: Date): MachineSnapshot {
-  const fraction = liveFraction(pollTime, type) * weeklyMultiplier(pollTime);
-  const livePick = pick(seed, 1, 100) / 100;
-  const isLive = livePick < fraction;
+  const fraction = liveFraction(pollTime, type);
+  const isLive = pick(seed, 1, 1000) / 1000 < fraction;
   const duration = cycleMinutes[type];
-  const minutesLeft = isLive ? pick(seed, 11, Math.max(1, duration - 1)) + 1 : 0;
+  // minutesLeft spans the full cycle [1, duration] so each row has a believable
+  // countdown regardless of where in the cycle the synthetic poll landed.
+  const minutesLeft = isLive ? pick(seed, 11, duration - 1) + 1 : 0;
   const status = isLive ? 'Running' : 'Available';
   const eta = status === 'Running' ? new Date(pollTime.getTime() + minutesLeft * 60_000).toISOString() : '';
   const name = machineName(number, type);
@@ -96,9 +132,12 @@ function snapToHour(now: Date): Date {
 }
 
 /** Build a synthetic dashboard payload. The latest poll rides the top of the
- *  current hour; the latest history row uses the same seed so its status
- *  matches the machines array. A per-second drift is layered onto minutesLeft
- *  so manual Refreshes show new countdown values without touching status. */
+ *  current hour and uses an epoch-based seed so each Refresh redraws the
+ *  chart's right-most point, the stats, and the per-machine progress bars.
+ *  Older history rows use a stable per-hour seed so the past pattern stays
+ *  the same across refreshes. Each Running row's minutesLeft is redrawn from
+ *  the full [1, duration] range so the cards stay varied even late in the
+ *  hour (otherwise elapsed-time subtraction would pin everyone to 1m). */
 export function generateDemoPayload(dates: Date[], now: Date = new Date()): DemoPayload {
   const latestPoll = snapToHour(now);
   // Per-second seed so refreshes that cross a second boundary show fresh
@@ -108,17 +147,18 @@ export function generateDemoPayload(dates: Date[], now: Date = new Date()): Demo
   const historyWeeks = 4;
   const totalHours = 24 * 7 * historyWeeks;
 
-  // Build the full history series first, oldest first. The latest row in
-  // history lives at latestPoll so the chart's most recent point is the same
-  // snapshot the machines array exposes.
+  // Build the full history series first, oldest first. The latest row uses
+  // epochSeed so it varies on Refresh; older rows use hourSeed so the past
+  // pattern stays stable across refreshes.
   const history: MachineSnapshot[] = [];
   for (let hourOffset = 0; hourOffset < totalHours; hourOffset += 1) {
     const pollTime = new Date(latestPoll.getTime() - hourOffset * hourly);
-    const hourSeed = Math.floor(pollTime.getTime() / hourly);
+    const isLatestRow = hourOffset === 0;
+    const rowSeed = isLatestRow ? epochSeed : Math.floor(pollTime.getTime() / hourly);
     for (const group of demoAssignments) {
       for (const number of group.numbers) {
         for (const type of ['Washer', 'Dryer'] as const) {
-          const seed = hourSeed + number + (type === 'Washer' ? 0 : 9973);
+          const seed = rowSeed + number + (type === 'Washer' ? 0 : 9973);
           history.push(buildRow(seed, group.dorm, number, type, pollTime));
         }
       }
@@ -128,18 +168,21 @@ export function generateDemoPayload(dates: Date[], now: Date = new Date()): Demo
   // Latest machines mirror the latest history row so the chart's right edge
   // matches the stats and individual machine cards. poll_time is bumped to
   // `now` so the dashboard shows a current reading, and minutesLeft gets a
-  // bounded per-second drift to feel responsive on Refresh.
-  const elapsedMs = now.getTime() - latestPoll.getTime();
-  const elapsedMinutes = Math.floor(elapsedMs / 60_000);
+  // bounded drift on top of the same [1, duration] range used by buildRow so
+  // values stay varied instead of all collapsing to 1m as the hour elapses.
   const latest: MachineSnapshot[] = history
     .filter((row) => new Date(row.poll_time).getTime() === latestPoll.getTime())
     .map((row) => {
-      const drift = pick(epochSeed + machineNumber(row.machine_name ?? row.bluetooth_address), 19, 7) - 3;
       if (row.status !== 'Running' || !row.estimated_completion_time) {
         return { ...row, poll_time: now.toISOString() };
       }
-      const baseMinutesLeft = Math.ceil((Date.parse(row.estimated_completion_time) - latestPoll.getTime()) / 60_000);
-      const minutesLeft = Math.max(1, baseMinutesLeft - elapsedMinutes + drift);
+      const number = machineNumber(row.machine_name ?? row.bluetooth_address);
+      const type = row.machine_type as 'Washer' | 'Dryer';
+      const duration = cycleMinutes[type];
+      const seed = epochSeed + number + (type === 'Washer' ? 0 : 9973);
+      const baseMinutesLeft = pick(seed, 11, duration - 1) + 1; // 1..duration
+      const drift = pick(seed, 19, 7) - 3; // -3..+3
+      const minutesLeft = Math.max(1, Math.min(duration, baseMinutesLeft + drift));
       return {
         ...row,
         poll_time: now.toISOString(),
