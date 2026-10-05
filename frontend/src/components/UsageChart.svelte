@@ -92,9 +92,11 @@
     }).join(' ');
   };
   let ticks = $derived(Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep));
+  let dayLabels = $derived(dates.map(date => days[date.getDay()]));
+  let dayNameLabels = $derived(dates.map(date => dayNames[date.getDay()]));
   let weeklyAxisLabels = $derived(view === -1 ? points : []);
-  let weekRangeLabel = $derived(`${formatDate(dates[0])} – ${formatDate(dates[6])}`);
-  let title = $derived(view === -1 ? (weekOffset === 0 ? 'Last full week' : `Week of ${formatDate(dates[0])}`) : `${dayNames[view]}, ${formatDate(dates[view])}`);
+  let weekRangeLabel = $derived(`${formatDate(dates[0])} – ${formatDate(dates.at(-1)!)}`);
+  let title = $derived(view === -1 ? (weekOffset === 0 ? 'Past week' : `Week of ${formatDate(dates[0])}`) : `${dayNameLabels[view]}, ${formatDate(dates[view])}`);
   let dataKey = $derived(points.map(point => `${point.timestamp}:${point.washers ?? 'x'}:${point.dryers ?? 'x'}`).join('|'));
   let selected = $derived(points[Math.min(hoverIndex, points.length - 1)] ?? emptyPoint);
   let hoverX = $derived(points.length ? x(Math.min(hoverIndex, points.length - 1)) : left + plotWidth / 2);
@@ -210,12 +212,12 @@
       {#if thumb}
         <span class="range-thumb" class:direct={!thumbAnimated} style:--usage-pill-width={`${thumb.width}px`} style:--usage-pill-height={`${thumb.height}px`}
           style:--usage-pill-center={`${thumbOffset ?? thumb.center}px`} aria-hidden="true">
-          {#each ['Week', ...days] as label, index}
+          {#each ['Week', ...dayLabels] as label, index}
             <span style:left={`${tabBounds[index]?.center ?? 0}px`}>{label}</span>
           {/each}
         </span>
       {/if}
-      {#each ['Week', ...days] as label, index}
+      {#each ['Week', ...dayLabels] as label, index}
         <button id={`period-${index}`} role="tab" aria-selected={view === index - 1} aria-controls="usage-panel" tabindex={view === index - 1 ? 0 : -1}
           onclick={(event) => { if (event.detail === 0 || !dragMoved) select(index - 1, false, event.detail !== 0); dragMoved = false; }}
           onpointerdown={(event) => startDrag(event, index - 1)}><span>{label}</span></button>

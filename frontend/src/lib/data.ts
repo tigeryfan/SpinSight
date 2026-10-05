@@ -111,13 +111,14 @@ function isRecord(value: unknown): value is MachineSnapshot {
 }
 
 export function lastFullWeek(now = new Date(), offset = 0): Date[] {
-  // offset = 0 returns the most recent completed week (Sun–Sat before `now`).
-  // Each step past 1 walks another seven days further into the past.
-  const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  sunday.setDate(sunday.getDate() - sunday.getDay() - 7 - offset * 7);
+  // offset = 0 returns the seven days ending on today so its right-most
+  // point updates with each Refresh. Each step past 1 walks another seven
+  // days further into the past.
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  end.setDate(end.getDate() - offset * 7);
   return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(sunday);
-    day.setDate(day.getDate() + index);
+    const day = new Date(end);
+    day.setDate(day.getDate() - (6 - index));
     return day;
   });
 }
